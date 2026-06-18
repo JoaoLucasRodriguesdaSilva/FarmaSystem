@@ -1,0 +1,1 @@
+# hooks/: hooks reutilizáveis (useAuth, useDebounce, usePagination).
