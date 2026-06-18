@@ -18,9 +18,20 @@ import { MongoService } from './mongo.service';
       inject: [ConfigService],
       useFactory: async (config: ConfigService): Promise<MongoClient> => {
         const uri = config.get<string>('MONGO_URI', 'mongodb://localhost:27017');
-        const client = new MongoClient(uri);
-        await client.connect();
-        new Logger('MongoClient').log('Conectado ao MongoDB.');
+        const logger = new Logger('MongoClient');
+        // Timeout curto para não travar o boot quando o Mongo está fora.
+        const client = new MongoClient(uri, { serverSelectionTimeoutMS: 3000 });
+        try {
+          await client.connect();
+          logger.log('Conectado ao MongoDB.');
+        } catch {
+          // O Mongo só é usado para mídias (Milestone 3). Se estiver indisponível,
+          // não derrubamos a aplicação: o client reconecta na primeira operação.
+          logger.warn(
+            `MongoDB indisponível em ${uri}. A API segue sem mídias (GridFS); ` +
+              'inicie o MongoDB para habilitar upload de imagens/bulas.',
+          );
+        }
         return client;
       },
     },

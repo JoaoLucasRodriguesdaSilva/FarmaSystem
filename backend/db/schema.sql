@@ -183,6 +183,16 @@ CREATE TABLE IF NOT EXISTS solicitacoes_reposicao (
     atendida_em TIMESTAMP
 );
 
+-- Tabela auxiliar para invalidar tokens JWT no logout (token blacklist).
+-- Um token continua criptograficamente válido até expirar; ao deslogar,
+-- gravamos seu hash/valor aqui e a JwtStrategy o rejeita enquanto não vencido.
+CREATE TABLE IF NOT EXISTS tokens_revogados (
+    id SERIAL PRIMARY KEY,
+    token TEXT NOT NULL,
+    expiracao TIMESTAMP NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ----------------------------------------------------------------------
 -- Índices auxiliares
 -- ----------------------------------------------------------------------
@@ -195,3 +205,5 @@ CREATE INDEX IF NOT EXISTS idx_vendas_funcionario ON vendas(funcionario_id);
 CREATE INDEX IF NOT EXISTS idx_vendas_criada_em ON vendas(criada_em);
 CREATE INDEX IF NOT EXISTS idx_itens_venda_venda ON itens_venda(venda_id);
 CREATE INDEX IF NOT EXISTS idx_receitas_status ON receitas(status);
+CREATE INDEX IF NOT EXISTS idx_tokens_revogados_token ON tokens_revogados(token);
+CREATE INDEX IF NOT EXISTS idx_tokens_revogados_expiracao ON tokens_revogados(expiracao);

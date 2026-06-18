@@ -1,9 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './slices/authSlice';
 
-// Slices de domínio (auth, sessão, permissões, carrinho) serão adicionados aqui.
+// Slices de domínio (sessão, permissões, carrinho) serão adicionados aqui.
 export const makeStore = () =>
   configureStore({
-    reducer: {},
+    reducer: {
+      auth: authReducer,
+    },
   });
 
 export type AppStore = ReturnType<typeof makeStore>;

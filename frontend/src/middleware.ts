@@ -13,15 +13,20 @@ const PUBLIC_ROUTES = ['/login', '/recuperar-senha'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const token = request.cookies.get('farmasystem.accessToken')?.value;
+  const isPublic = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
 
-  if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
+  // Usuário autenticado tentando acessar login/recuperação: manda ao painel.
+  if (isPublic) {
+    if (token) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
     return NextResponse.next();
   }
 
-  const token = request.cookies.get('farmasystem.accessToken')?.value;
+  // Rota protegida sem token: volta para o login.
   if (!token) {
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
