@@ -11,6 +11,8 @@ import { FornecedoresModule } from './modules/fornecedores/fornecedores.module';
 import { ArquivosModule } from './modules/arquivos/arquivos.module';
 import { MedicamentosModule } from './modules/medicamentos/medicamentos.module';
 import { EstoqueModule } from './modules/estoque/estoque.module';
+import { ClientesModule } from './modules/clientes/clientes.module';
+import { VendasModule } from './modules/vendas/vendas.module';
 
 @Module({
   imports: [
@@ -26,8 +28,10 @@ import { EstoqueModule } from './modules/estoque/estoque.module';
     ArquivosModule,
     MedicamentosModule,
     EstoqueModule,
-    // Os demais módulos de domínio (vendas, clientes, receitas, dashboard,
-    // financeiro) serão adicionados aqui conforme o implementation_plan.md.
+    ClientesModule,
+    VendasModule,
+    // Os demais módulos de domínio (receitas, dashboard, financeiro) serão
+    // adicionados aqui conforme o implementation_plan.md.
   ],
   controllers: [HealthController],
   providers: [

@@ -96,11 +96,35 @@ export interface Movimentacao {
   data: string;
 }
 
+export interface Cliente {
+  id: number;
+  nome: string;
+  cpf: string;
+  telefone?: string;
+  email?: string;
+}
+
 export interface ItemVenda {
   medicamentoId: number;
+  nome?: string;
   quantidade: number;
   precoUnitario: number;
   subtotal: number;
+}
+
+/** Item do carrinho do PDV (estado local, antes de virar venda). */
+export interface CartItem {
+  medicamentoId: number;
+  nome: string;
+  precoUnitario: number;
+  quantidade: number;
+  estoqueAtual: number;
+}
+
+export interface ResumoTurno {
+  totalVendido: number;
+  quantidadeVendas: number;
+  ticketMedio: number;
 }
 
 export interface Venda {

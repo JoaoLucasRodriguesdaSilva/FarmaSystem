@@ -320,6 +320,33 @@ export class MedicamentosRepository {
     return rows[0] ? { estoqueAtual: rows[0].estoque_atual } : null;
   }
 
+  /**
+   * Trava o medicamento (FOR UPDATE) retornando estoque, preço e nome —
+   * usado ao registrar uma venda para validar saldo e congelar o preço.
+   */
+  async lockParaVenda(
+    id: number,
+    client: Executor,
+  ): Promise<{ estoqueAtual: number; preco: number; nome: string } | null> {
+    const { rows } = await this.run<{
+      estoque_atual: number;
+      preco: string;
+      nome: string;
+    }>(
+      client,
+      `SELECT estoque_atual, preco, nome FROM medicamentos
+       WHERE id = $1 AND ativo = TRUE FOR UPDATE`,
+      [id],
+    );
+    return rows[0]
+      ? {
+          estoqueAtual: rows[0].estoque_atual,
+          preco: Number(rows[0].preco),
+          nome: rows[0].nome,
+        }
+      : null;
+  }
+
   async listarEstoque(params: {
     page: number;
     limit: number;
