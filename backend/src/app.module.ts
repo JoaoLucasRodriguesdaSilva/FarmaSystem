@@ -7,6 +7,10 @@ import { HealthController } from './health/health.controller';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsuariosModule } from './modules/usuarios/usuarios.module';
+import { FornecedoresModule } from './modules/fornecedores/fornecedores.module';
+import { ArquivosModule } from './modules/arquivos/arquivos.module';
+import { MedicamentosModule } from './modules/medicamentos/medicamentos.module';
+import { EstoqueModule } from './modules/estoque/estoque.module';
 
 @Module({
   imports: [
@@ -18,9 +22,12 @@ import { UsuariosModule } from './modules/usuarios/usuarios.module';
     MongoModule,
     UsuariosModule,
     AuthModule,
-    // Os demais módulos de domínio (medicamentos, estoque, vendas, clientes,
-    // fornecedores, receitas, dashboard, financeiro) serão adicionados aqui
-    // conforme os marcos do implementation_plan.md.
+    FornecedoresModule,
+    ArquivosModule,
+    MedicamentosModule,
+    EstoqueModule,
+    // Os demais módulos de domínio (vendas, clientes, receitas, dashboard,
+    // financeiro) serão adicionados aqui conforme o implementation_plan.md.
   ],
   controllers: [HealthController],
   providers: [

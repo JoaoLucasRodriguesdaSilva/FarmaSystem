@@ -40,6 +40,11 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (token) {
     config.headers.set('Authorization', `Bearer ${token}`);
   }
+  // Em uploads (FormData), removemos o Content-Type JSON padrão para o browser
+  // definir o multipart/form-data com o boundary correto.
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    config.headers.delete('Content-Type');
+  }
   return config;
 });
 

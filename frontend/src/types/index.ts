@@ -45,8 +45,26 @@ export interface Medicamento {
   estoqueAtual: number;
   estoqueMinimo: number;
   statusEstoque: StatusEstoque;
+  fornecedorId?: number;
   imagens: string[];
 }
+
+export interface MedicamentoDetalhe extends Medicamento {
+  fornecedorId?: number;
+  bulaUrl?: string;
+  lotes: Lote[];
+}
+
+export interface Fornecedor {
+  id: number;
+  nome: string;
+  cnpj: string;
+  telefone?: string;
+  email?: string;
+  endereco?: string;
+}
+
+export type TipoMovimentacao = 'entrada' | 'saida';
 
 export interface Lote {
   id: number;
@@ -55,6 +73,27 @@ export interface Lote {
   quantidade: number;
   dataValidade: string;
   dataEntrada: string;
+}
+
+export interface EstoqueItem {
+  medicamentoId: number;
+  nome: string;
+  categoria: string;
+  estoqueAtual: number;
+  estoqueMinimo: number;
+  statusEstoque: StatusEstoque;
+  totalLotes: number;
+}
+
+export interface Movimentacao {
+  id: number;
+  medicamentoId: number;
+  loteId?: number;
+  tipo: TipoMovimentacao;
+  quantidade: number;
+  motivo?: string;
+  usuarioId: number;
+  data: string;
 }
 
 export interface ItemVenda {

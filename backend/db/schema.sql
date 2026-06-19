@@ -83,7 +83,8 @@ CREATE TABLE IF NOT EXISTS medicamentos (
     status_estoque status_estoque DEFAULT 'normal',
     fornecedor_id INTEGER REFERENCES fornecedores(id) ON DELETE SET NULL,
     imagens JSONB DEFAULT '[]', -- Array de ObjectIds (GridFS) das imagens
-    bula_id VARCHAR(255)        -- ObjectId (GridFS) do PDF da bula
+    bula_id VARCHAR(255),       -- ObjectId (GridFS) do PDF da bula
+    ativo BOOLEAN DEFAULT TRUE  -- Soft-delete: DELETE /medicamentos/{id} marca como inativo
 );
 
 CREATE TABLE IF NOT EXISTS lotes (
@@ -194,6 +195,11 @@ CREATE TABLE IF NOT EXISTS tokens_revogados (
 );
 
 -- ----------------------------------------------------------------------
+-- Ajustes idempotentes (para bancos já criados antes desta migração)
+-- ----------------------------------------------------------------------
+ALTER TABLE medicamentos ADD COLUMN IF NOT EXISTS ativo BOOLEAN DEFAULT TRUE;
+
+-- ----------------------------------------------------------------------
 -- Índices auxiliares
 -- ----------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_lotes_medicamento ON lotes(medicamento_id);
@@ -207,3 +213,6 @@ CREATE INDEX IF NOT EXISTS idx_itens_venda_venda ON itens_venda(venda_id);
 CREATE INDEX IF NOT EXISTS idx_receitas_status ON receitas(status);
 CREATE INDEX IF NOT EXISTS idx_tokens_revogados_token ON tokens_revogados(token);
 CREATE INDEX IF NOT EXISTS idx_tokens_revogados_expiracao ON tokens_revogados(expiracao);
+CREATE INDEX IF NOT EXISTS idx_medicamentos_fornecedor ON medicamentos(fornecedor_id);
+CREATE INDEX IF NOT EXISTS idx_medicamentos_ativo ON medicamentos(ativo);
+CREATE INDEX IF NOT EXISTS idx_mov_data ON movimentacoes_estoque(data);

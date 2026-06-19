@@ -18,7 +18,14 @@ interface NavConfig {
 const NAV: NavConfig[] = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊', perfis: ['administrador'] },
   { href: '/vendas', label: 'Vendas (PDV)', icon: '🛒', perfis: [] },
+  { href: '/medicamentos', label: 'Medicamentos', icon: '💊', perfis: [] },
   { href: '/estoque', label: 'Estoque', icon: '📦', perfis: [] },
+  {
+    href: '/fornecedores',
+    label: 'Fornecedores',
+    icon: '🏭',
+    perfis: ['administrador', 'farmaceutico'],
+  },
   {
     href: '/usuarios',
     label: 'Usuários',
