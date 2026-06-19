@@ -17,6 +17,12 @@ interface NavConfig {
 // a proteção definitiva continua na API (RolesGuard).
 const NAV: NavConfig[] = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊', perfis: ['administrador'] },
+  {
+    href: '/farmaceutico',
+    label: 'Painel Farmacêutico',
+    icon: '🧪',
+    perfis: ['farmaceutico'],
+  },
   { href: '/pdv', label: 'Vendas (PDV)', icon: '🛒', perfis: [] },
   { href: '/medicamentos', label: 'Medicamentos', icon: '💊', perfis: [] },
   { href: '/estoque', label: 'Estoque', icon: '📦', perfis: [] },

@@ -199,6 +199,11 @@ CREATE TABLE IF NOT EXISTS tokens_revogados (
 -- ----------------------------------------------------------------------
 ALTER TABLE medicamentos ADD COLUMN IF NOT EXISTS ativo BOOLEAN DEFAULT TRUE;
 
+-- Vínculo opcional da venda com a receita que autoriza os itens controlados.
+-- Definido aqui (e não no CREATE) porque `vendas` é criada antes de `receitas`.
+ALTER TABLE vendas
+  ADD COLUMN IF NOT EXISTS receita_id INTEGER REFERENCES receitas(id) ON DELETE SET NULL;
+
 -- ----------------------------------------------------------------------
 -- Índices auxiliares
 -- ----------------------------------------------------------------------

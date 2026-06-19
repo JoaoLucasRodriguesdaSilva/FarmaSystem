@@ -18,8 +18,15 @@ import {
   MovimentacaoResponseDto,
 } from './dto/estoque-response.dto';
 import { LoteResponseDto } from './dto/lote-response.dto';
+import { AlertaResponseDto } from './dto/alerta-response.dto';
+import {
+  CreateSolicitacaoReposicaoDto,
+  SolicitacaoReposicaoResponseDto,
+} from './dto/solicitacao-reposicao.dto';
+import { AlertasRepository } from './repositories/alertas.repository';
 import { LotesRepository } from './repositories/lotes.repository';
 import { MovimentacoesRepository } from './repositories/movimentacoes.repository';
+import { SolicitacoesRepository } from './repositories/solicitacoes.repository';
 
 @Injectable()
 export class EstoqueService {
@@ -28,6 +35,8 @@ export class EstoqueService {
     private readonly medicamentos: MedicamentosRepository,
     private readonly lotes: LotesRepository,
     private readonly movimentacoes: MovimentacoesRepository,
+    private readonly alertas: AlertasRepository,
+    private readonly solicitacoes: SolicitacoesRepository,
   ) {}
 
   async listarEstoque(query: ListEstoqueQueryDto): Promise<EstoquePageDto> {
@@ -140,7 +149,7 @@ export class EstoqueService {
         await this.lotes.ajustarQuantidade(dto.loteId, delta, client);
       }
 
-      return this.movimentacoes.create(
+      const movimentacao = await this.movimentacoes.create(
         {
           medicamentoId: dto.medicamentoId,
           loteId: dto.loteId,
@@ -151,6 +160,54 @@ export class EstoqueService {
         },
         client,
       );
+
+      // Saída pode derrubar o saldo abaixo do mínimo: gera o alerta físico.
+      if (saida) {
+        await this.alertas.gerarAlertaEstoque(dto.medicamentoId, client);
+      }
+
+      return movimentacao;
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Alertas de estoque e solicitações de reposição
+  // -------------------------------------------------------------------------
+
+  async getAlertasAtivos(): Promise<AlertaResponseDto[]> {
+    return this.alertas.findAtivos();
+  }
+
+  async resolverAlerta(id: number): Promise<void> {
+    const ok = await this.alertas.resolver(id);
+    if (!ok) {
+      throw new NotFoundException({
+        codigo: 'ALERTA_NAO_ENCONTRADO',
+        message: `Alerta ${id} não encontrado ou já resolvido.`,
+      });
+    }
+  }
+
+  async listarSolicitacoesReposicao(): Promise<SolicitacaoReposicaoResponseDto[]> {
+    return this.solicitacoes.findAll();
+  }
+
+  async criarSolicitacaoReposicao(
+    dto: CreateSolicitacaoReposicaoDto,
+    solicitanteId: number,
+  ): Promise<SolicitacaoReposicaoResponseDto> {
+    const existe = await this.medicamentos.findById(dto.medicamentoId);
+    if (!existe) {
+      throw new NotFoundException({
+        codigo: 'MEDICAMENTO_NAO_ENCONTRADO',
+        message: `Medicamento ${dto.medicamentoId} não encontrado.`,
+      });
+    }
+    return this.solicitacoes.create({
+      medicamentoId: dto.medicamentoId,
+      quantidadeSolicitada: dto.quantidadeSolicitada,
+      observacao: dto.observacao,
+      solicitanteId,
     });
   }
 }

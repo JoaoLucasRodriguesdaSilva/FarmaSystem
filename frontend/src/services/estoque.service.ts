@@ -1,11 +1,19 @@
 import { api } from './api';
 import type {
+  AlertaEstoque,
   EstoqueItem,
   Lote,
   Movimentacao,
   Paginated,
+  SolicitacaoReposicao,
   TipoMovimentacao,
 } from '@/types';
+
+export interface NovaSolicitacaoInput {
+  medicamentoId: number;
+  quantidadeSolicitada: number;
+  observacao?: string;
+}
 
 export interface NovoLoteInput {
   medicamentoId: number;
@@ -58,6 +66,32 @@ export const estoqueService = {
   ): Promise<Movimentacao> {
     const { data } = await api.post<Movimentacao>(
       '/estoque/movimentacoes',
+      input,
+    );
+    return data;
+  },
+
+  async listarAlertas(): Promise<AlertaEstoque[]> {
+    const { data } = await api.get<AlertaEstoque[]>('/estoque/alertas');
+    return data;
+  },
+
+  async resolverAlerta(id: number): Promise<void> {
+    await api.post(`/estoque/alertas/${id}/resolver`);
+  },
+
+  async listarSolicitacoes(): Promise<SolicitacaoReposicao[]> {
+    const { data } = await api.get<SolicitacaoReposicao[]>(
+      '/estoque/solicitacoes-reposicao',
+    );
+    return data;
+  },
+
+  async criarSolicitacao(
+    input: NovaSolicitacaoInput,
+  ): Promise<SolicitacaoReposicao> {
+    const { data } = await api.post<SolicitacaoReposicao>(
+      '/estoque/solicitacoes-reposicao',
       input,
     );
     return data;

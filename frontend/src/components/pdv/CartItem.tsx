@@ -19,7 +19,14 @@ export function CartItem({ item, onChangeQuantity, onRemove }: CartItemProps) {
   return (
     <div className="flex items-center gap-2 border-b border-gray-100 py-2">
       <div className="flex-1">
-        <p className="text-sm font-medium text-gray-800">{item.nome}</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
+          {item.nome}
+          {item.restricaoVenda !== 'venda_livre' && (
+            <span className="rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-purple-700">
+              Receita
+            </span>
+          )}
+        </p>
         <p className="text-xs text-gray-500">{moeda.format(item.precoUnitario)} un.</p>
       </div>
 

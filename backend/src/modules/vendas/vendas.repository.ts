@@ -5,6 +5,7 @@ import { FormaPagamento } from '../../common/enums/forma-pagamento.enum';
 import { StatusVenda } from '../../common/enums/status-venda.enum';
 import { TipoMovimentacao } from '../../common/enums/tipo-movimentacao.enum';
 import { MedicamentosRepository } from '../medicamentos/medicamentos.repository';
+import { AlertasRepository } from '../estoque/repositories/alertas.repository';
 import { MovimentacoesRepository } from '../estoque/repositories/movimentacoes.repository';
 import {
   ItemVendaResponseDto,
@@ -17,6 +18,7 @@ interface VendaRow {
   codigo: string;
   funcionario_id: number;
   cliente_id: number | null;
+  receita_id: number | null;
   subtotal: string;
   desconto: string;
   total: string;
@@ -39,6 +41,7 @@ interface ItemRow {
 export interface RegistrarVendaData {
   funcionarioId: number;
   clienteId?: number;
+  receitaId?: number;
   itens: { medicamentoId: number; quantidade: number }[];
   desconto: number;
   formaPagamento: FormaPagamento;
@@ -59,6 +62,7 @@ export class VendasRepository {
     private readonly db: PostgresService,
     private readonly medicamentos: MedicamentosRepository,
     private readonly movimentacoes: MovimentacoesRepository,
+    private readonly alertas: AlertasRepository,
   ) {}
 
   private toResponse(
@@ -70,6 +74,7 @@ export class VendasRepository {
       codigo: row.codigo,
       funcionarioId: row.funcionario_id,
       clienteId: row.cliente_id ?? undefined,
+      receitaId: row.receita_id ?? undefined,
       itens,
       subtotal: Number(row.subtotal),
       desconto: Number(row.desconto),
@@ -153,14 +158,15 @@ export class VendasRepository {
 
       const { rows: vendaRows } = await client.query<{ id: number }>(
         `INSERT INTO vendas
-          (codigo, funcionario_id, cliente_id, subtotal, desconto, total,
-           forma_pagamento, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'concluida')
+          (codigo, funcionario_id, cliente_id, receita_id, subtotal, desconto,
+           total, forma_pagamento, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'concluida')
          RETURNING id`,
         [
           this.gerarCodigo(),
           data.funcionarioId,
           data.clienteId ?? null,
+          data.receitaId ?? null,
           subtotalGeral,
           desconto,
           total,
@@ -210,6 +216,9 @@ export class VendasRepository {
             client,
           );
         }
+
+        // A saída pode derrubar o saldo abaixo do mínimo: gera o alerta físico.
+        await this.alertas.gerarAlertaEstoque(item.medicamentoId, client);
       }
 
       return vendaId;

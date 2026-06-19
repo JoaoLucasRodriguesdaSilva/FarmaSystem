@@ -8,6 +8,7 @@ export interface ItemVendaInput {
 
 export interface NovaVendaInput {
   clienteId?: number;
+  receitaId?: number;
   itens: ItemVendaInput[];
   desconto?: number;
   formaPagamento: FormaPagamento;

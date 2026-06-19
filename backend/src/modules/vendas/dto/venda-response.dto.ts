@@ -32,6 +32,9 @@ export class VendaResponseDto {
   @ApiPropertyOptional({ example: 7 })
   clienteId?: number;
 
+  @ApiPropertyOptional({ example: 9 })
+  receitaId?: number;
+
   @ApiProperty({ type: [ItemVendaResponseDto] })
   itens!: ItemVendaResponseDto[];
 

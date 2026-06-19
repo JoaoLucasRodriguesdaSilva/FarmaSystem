@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PostgresModule } from './database/postgres/postgres.module';
 import { MongoModule } from './database/mongo/mongo.module';
 import { HealthController } from './health/health.controller';
@@ -13,6 +14,7 @@ import { MedicamentosModule } from './modules/medicamentos/medicamentos.module';
 import { EstoqueModule } from './modules/estoque/estoque.module';
 import { ClientesModule } from './modules/clientes/clientes.module';
 import { VendasModule } from './modules/vendas/vendas.module';
+import { ReceitasModule } from './modules/receitas/receitas.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { VendasModule } from './modules/vendas/vendas.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    // Habilita os Cron Jobs (ex.: geração diária de alertas de vencimento).
+    ScheduleModule.forRoot(),
     PostgresModule,
     MongoModule,
     UsuariosModule,
@@ -30,8 +34,9 @@ import { VendasModule } from './modules/vendas/vendas.module';
     EstoqueModule,
     ClientesModule,
     VendasModule,
-    // Os demais módulos de domínio (receitas, dashboard, financeiro) serão
-    // adicionados aqui conforme o implementation_plan.md.
+    ReceitasModule,
+    // Os demais módulos de domínio (dashboard, financeiro) serão adicionados
+    // aqui conforme o implementation_plan.md.
   ],
   controllers: [HealthController],
   providers: [

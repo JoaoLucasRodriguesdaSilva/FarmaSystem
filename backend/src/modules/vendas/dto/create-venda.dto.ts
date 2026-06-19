@@ -34,6 +34,17 @@ export class CreateVendaDto {
   @Min(1)
   clienteId?: number;
 
+  @ApiPropertyOptional({
+    example: 9,
+    description:
+      'Receita aprovada que autoriza os itens controlados/uso hospitalar.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  receitaId?: number;
+
   @ApiProperty({ type: [ItemVendaInputDto] })
   @IsArray()
   @ArrayMinSize(1)

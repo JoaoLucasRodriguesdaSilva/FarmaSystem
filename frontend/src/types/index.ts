@@ -119,6 +119,15 @@ export interface CartItem {
   precoUnitario: number;
   quantidade: number;
   estoqueAtual: number;
+  restricaoVenda: RestricaoVenda;
+}
+
+/** Situação resumida de uma receita (acompanhamento no PDV). */
+export interface SituacaoReceita {
+  id: number;
+  codigo: string;
+  pacienteNome: string;
+  status: StatusReceita;
 }
 
 export interface ResumoTurno {
@@ -132,6 +141,7 @@ export interface Venda {
   codigo: string;
   funcionarioId: number;
   clienteId?: number;
+  receitaId?: number;
   itens: ItemVenda[];
   subtotal: number;
   desconto: number;
@@ -141,6 +151,34 @@ export interface Venda {
   criadaEm: string;
   canceladaEm?: string;
   motivoCancelamento?: string;
+}
+
+export type TipoAlerta = 'estoque_baixo' | 'vencimento_proximo' | 'esgotado';
+export type StatusSolicitacao = 'pendente' | 'atendida' | 'cancelada';
+
+export interface AlertaEstoque {
+  id: number;
+  tipo: TipoAlerta;
+  medicamentoId: number;
+  medicamentoNome?: string;
+  quantidadeAtual?: number;
+  quantidadeMinima?: number;
+  dataValidade?: string;
+  diasParaVencimento?: number;
+  resolvido: boolean;
+  dataCriacao: string;
+}
+
+export interface SolicitacaoReposicao {
+  id: number;
+  medicamentoId: number;
+  medicamentoNome?: string;
+  quantidadeSolicitada: number;
+  observacao?: string;
+  status: StatusSolicitacao;
+  solicitanteId?: number;
+  criadaEm: string;
+  atendidaEm?: string;
 }
 
 export interface Receita {

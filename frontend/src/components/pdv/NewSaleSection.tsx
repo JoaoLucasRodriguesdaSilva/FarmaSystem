@@ -1,6 +1,11 @@
 'use client';
 
-import type { CartItem as CartItemType, Cliente, FormaPagamento } from '@/types';
+import type {
+  CartItem as CartItemType,
+  Cliente,
+  FormaPagamento,
+  SituacaoReceita,
+} from '@/types';
 import { CartItem } from './CartItem';
 
 interface NewSaleSectionProps {
@@ -11,11 +16,16 @@ interface NewSaleSectionProps {
   formaPagamento: FormaPagamento;
   finalizando?: boolean;
   erro?: string | null;
+  exigeReceita?: boolean;
+  receita?: SituacaoReceita | null;
+  verificandoReceita?: boolean;
+  finalizarLabel?: string;
   onChangeQuantity: (medicamentoId: number, quantidade: number) => void;
   onRemove: (medicamentoId: number) => void;
   onChangeCliente: (clienteId: number | null) => void;
   onChangeDesconto: (desconto: number) => void;
   onChangeFormaPagamento: (forma: FormaPagamento) => void;
+  onVerificarReceita?: () => void;
   onFinalizar: () => void;
   onLimpar: () => void;
 }
@@ -40,11 +50,16 @@ export function NewSaleSection({
   formaPagamento,
   finalizando,
   erro,
+  exigeReceita,
+  receita,
+  verificandoReceita,
+  finalizarLabel = 'Finalizar venda',
   onChangeQuantity,
   onRemove,
   onChangeCliente,
   onChangeDesconto,
   onChangeFormaPagamento,
+  onVerificarReceita,
   onFinalizar,
   onLimpar,
 }: NewSaleSectionProps) {
@@ -134,6 +149,9 @@ export function NewSaleSection({
             <span>{moeda.format(total)}</span>
           </div>
         </div>
+        {/* a faixa de receita e o botão de finalizar são renderizados abaixo */}
+
+        {exigeReceita && <ReceitaBanner receita={receita} onVerificar={onVerificarReceita} verificando={verificandoReceita} />}
 
         {erro && (
           <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -156,10 +174,60 @@ export function NewSaleSection({
             disabled={itens.length === 0 || finalizando}
             className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
           >
-            {finalizando ? 'Finalizando…' : 'Finalizar venda'}
+            {finalizando ? 'Finalizando…' : finalizarLabel}
           </button>
         </div>
       </div>
     </section>
+  );
+}
+
+function ReceitaBanner({
+  receita,
+  verificando,
+  onVerificar,
+}: {
+  receita?: SituacaoReceita | null;
+  verificando?: boolean;
+  onVerificar?: () => void;
+}) {
+  if (!receita) {
+    return (
+      <p className="rounded-lg bg-purple-50 px-3 py-2 text-sm text-purple-700">
+        Há itens controlados. Será necessário informar uma receita e aguardar a
+        aprovação do farmacêutico.
+      </p>
+    );
+  }
+
+  if (receita.status === 'aprovada') {
+    return (
+      <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        Receita {receita.codigo} aprovada. Você já pode finalizar a venda.
+      </p>
+    );
+  }
+
+  if (receita.status === 'revisao' || receita.status === 'rejeitada') {
+    return (
+      <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+        Receita {receita.codigo} {receita.status === 'revisao' ? 'voltou para revisão' : 'foi rejeitada'}.
+        Ajuste os dados e reenvie.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+      <span>Receita {receita.codigo} aguardando aprovação do farmacêutico.</span>
+      <button
+        type="button"
+        onClick={onVerificar}
+        disabled={verificando}
+        className="shrink-0 font-medium text-amber-800 underline disabled:opacity-60"
+      >
+        {verificando ? 'Verificando…' : 'Verificar'}
+      </button>
+    </div>
   );
 }
