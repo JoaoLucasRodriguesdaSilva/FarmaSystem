@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ExpirationAlertsPanel } from '@/components/pharmacist/ExpirationAlertsPanel';
 import { PrescriptionsSection } from '@/components/pharmacist/PrescriptionsSection';
 import { StockAlertsPanel } from '@/components/pharmacist/StockAlertsPanel';
+import { WeeklyDispensationsChartSection } from '@/components/pharmacist/WeeklyDispensationsChartSection';
 import { estoqueService } from '@/services/estoque.service';
 import { receitasService } from '@/services/receitas.service';
 import type { AlertaEstoque, Receita } from '@/types';
@@ -154,6 +155,8 @@ export default function PharmacistPage() {
           />
         </div>
       </div>
+
+      <WeeklyDispensationsChartSection />
     </div>
   );
 }

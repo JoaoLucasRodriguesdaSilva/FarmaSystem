@@ -195,6 +195,67 @@ export interface Receita {
   observacao?: string;
 }
 
+// --- Dashboard & Financeiro (Milestone 6) ---
+
+export type Periodo = 'hoje' | 'semana' | 'mes' | 'ano';
+
+export interface MetricaCard {
+  valor: number;
+  variacao: number | null;
+}
+
+export interface MetricasDashboard {
+  usuarios: MetricaCard;
+  receita: MetricaCard;
+  vendas: MetricaCard;
+  produtosEstoque: MetricaCard;
+}
+
+export interface PontoSerie {
+  data: string;
+  valor: number;
+}
+
+export interface ProdutoMaisVendido {
+  medicamentoId: number;
+  nome: string;
+  quantidade: number;
+  total: number;
+}
+
+export interface DispensacaoSemanal {
+  data: string;
+  dispensacoes: number;
+  receitas: number;
+}
+
+export interface FinanceiroKpis {
+  receitaTotal: MetricaCard;
+  despesas: MetricaCard;
+  lucroLiquido: MetricaCard;
+  margemLucro: number;
+}
+
+export interface PontoReceitaDespesa {
+  data: string;
+  receita: number;
+  despesas: number;
+}
+
+export interface MargemCategoria {
+  categoria: string;
+  faturamento: number;
+  margem: number;
+}
+
+export interface DesempenhoFuncionario {
+  funcionarioId: number;
+  nome: string;
+  totalVendido: number;
+  quantidadeVendas: number;
+  ticketMedio: number;
+}
+
 export interface ApiError {
   codigo: string;
   mensagem: string;

@@ -15,6 +15,8 @@ import { EstoqueModule } from './modules/estoque/estoque.module';
 import { ClientesModule } from './modules/clientes/clientes.module';
 import { VendasModule } from './modules/vendas/vendas.module';
 import { ReceitasModule } from './modules/receitas/receitas.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { FinanceiroModule } from './modules/financeiro/financeiro.module';
 
 @Module({
   imports: [
@@ -35,8 +37,8 @@ import { ReceitasModule } from './modules/receitas/receitas.module';
     ClientesModule,
     VendasModule,
     ReceitasModule,
-    // Os demais módulos de domínio (dashboard, financeiro) serão adicionados
-    // aqui conforme o implementation_plan.md.
+    DashboardModule,
+    FinanceiroModule,
   ],
   controllers: [HealthController],
   providers: [

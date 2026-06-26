@@ -1,0 +1,77 @@
+import { Injectable } from '@nestjs/common';
+import { Periodo } from '../../common/enums/periodo.enum';
+import { ExportarQueryDto } from './dto/financeiro-queries.dto';
+import {
+  DesempenhoFuncionarioDto,
+  FinanceiroKpisDto,
+  MargemCategoriaDto,
+  PontoReceitaDespesaDto,
+} from './dto/financeiro-response.dto';
+import {
+  CUSTO_ESTIMADO_RATIO,
+  FinanceiroRepository,
+} from './financeiro.repository';
+import { ArquivoRelatorio, RelatoriosService } from './relatorios.service';
+
+@Injectable()
+export class FinanceiroService {
+  constructor(
+    private readonly repository: FinanceiroRepository,
+    private readonly relatorios: RelatoriosService,
+  ) {}
+
+  private arredondar(valor: number): number {
+    return Math.round((valor + Number.EPSILON) * 100) / 100;
+  }
+
+  async kpis(periodo: Periodo): Promise<FinanceiroKpisDto> {
+    const receita = await this.repository.receitaAtualEAnterior(periodo);
+
+    const despesasAtual = receita.atual * CUSTO_ESTIMADO_RATIO;
+    const despesasAnt = receita.anterior * CUSTO_ESTIMADO_RATIO;
+    const lucroAtual = receita.atual - despesasAtual;
+    const lucroAnt = receita.anterior - despesasAnt;
+
+    return {
+      receitaTotal: {
+        valor: this.arredondar(receita.atual),
+        variacao: this.repository.pctVariacao(receita.atual, receita.anterior),
+      },
+      despesas: {
+        valor: this.arredondar(despesasAtual),
+        variacao: this.repository.pctVariacao(despesasAtual, despesasAnt),
+      },
+      lucroLiquido: {
+        valor: this.arredondar(lucroAtual),
+        variacao: this.repository.pctVariacao(lucroAtual, lucroAnt),
+      },
+      margemLucro: Math.round((1 - CUSTO_ESTIMADO_RATIO) * 100),
+    };
+  }
+
+  receitaDespesas(periodo: Periodo): Promise<PontoReceitaDespesaDto[]> {
+    return this.repository.receitaDespesas(periodo);
+  }
+
+  margemPorCategoria(periodo: Periodo): Promise<MargemCategoriaDto[]> {
+    return this.repository.margemPorCategoria(periodo);
+  }
+
+  desempenhoFuncionarios(periodo: Periodo): Promise<DesempenhoFuncionarioDto[]> {
+    return this.repository.desempenhoFuncionarios(periodo);
+  }
+
+  async exportar(query: ExportarQueryDto): Promise<ArquivoRelatorio> {
+    const [kpis, desempenho, margem] = await Promise.all([
+      this.kpis(query.periodo),
+      this.desempenhoFuncionarios(query.periodo),
+      this.margemPorCategoria(query.periodo),
+    ]);
+    return this.relatorios.gerar(query.formato, {
+      periodo: query.periodo,
+      kpis,
+      desempenho,
+      margem,
+    });
+  }
+}
