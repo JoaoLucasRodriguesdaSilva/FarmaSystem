@@ -28,6 +28,9 @@ frontend/   # Aplicação Next.js
 - PostgreSQL >= 14
 - MongoDB >= 6
 
+Ou, alternativamente, apenas **Docker** + **Docker Compose** (ver
+[Executar com Docker](#executar-com-docker)).
+
 ## Setup
 
 ```bash
@@ -48,6 +51,36 @@ cp frontend/.env.local.example frontend/.env.local
 ```bash
 npm run dev:backend    # API em http://localhost:3000/api/v1 (Swagger em /api/v1/docs)
 npm run dev:frontend   # Web em http://localhost:3001
+```
+
+## Executar com Docker
+
+Sobe tudo (PostgreSQL + MongoDB + API + Web) com um comando — não precisa de
+Node/Postgres/Mongo instalados localmente, apenas Docker.
+
+```bash
+# (opcional) sobrescrever segredos/variáveis:
+cp .env.docker.example .env    # e ajuste, principalmente os segredos JWT
+
+docker compose up -d --build
+```
+
+Serviços expostos:
+
+| Serviço | URL |
+| --- | --- |
+| API (NestJS) | http://localhost:3000/api/v1 (Swagger em `/api/v1/docs`) |
+| Web (Next.js) | http://localhost:3001 |
+| PostgreSQL | `localhost:5432` |
+| MongoDB | `localhost:27017` |
+
+O schema do PostgreSQL (`backend/db/schema.sql`) é aplicado automaticamente na
+primeira subida. Os dados persistem nos volumes `pgdata` e `mongodata`.
+
+```bash
+docker compose logs -f            # acompanhar logs
+docker compose down               # parar (mantém os dados)
+docker compose down -v            # parar e apagar os volumes (zera os bancos)
 ```
 
 ## Documentação

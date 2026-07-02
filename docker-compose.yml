@@ -1,0 +1,99 @@
+# ===========================================================================
+# FarmaSystem — orquestração completa (PostgreSQL + MongoDB + API + Web)
+#
+#   docker compose up -d --build
+#
+# Serviços:
+#   - postgres : banco relacional (schema criado automaticamente na 1ª subida)
+#   - mongo    : mídias via GridFS
+#   - backend  : API NestJS   -> http://localhost:3000/api/v1  (docs em /api/v1/docs)
+#   - frontend : Web Next.js   -> http://localhost:3001
+#
+# Variáveis sensíveis (segredos JWT) podem ser sobrescritas via arquivo .env
+# na raiz ou pelo ambiente. Ver .env.docker.example.
+# ===========================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-postgres}
+      POSTGRES_DB: ${PGDATABASE:-farmasystem}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Executado apenas quando o volume de dados está vazio (1ª inicialização).
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-postgres} -d ${PGDATABASE:-farmasystem}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      API_PREFIX: api/v1
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3001}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000/api/v1}
+      # Dentro da rede do compose, os bancos são acessíveis pelo nome do serviço.
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${PGUSER:-postgres}
+      PGPASSWORD: ${PGPASSWORD:-postgres}
+      PGDATABASE: ${PGDATABASE:-farmasystem}
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DB: ${MONGO_DB:-farmasystem_files}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-troque-este-segredo-de-acesso}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-troque-este-segredo-de-refresh}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # URL usada pelo NAVEGADOR (não pela rede interna do compose).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000/api/v1}
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  mongodata:
