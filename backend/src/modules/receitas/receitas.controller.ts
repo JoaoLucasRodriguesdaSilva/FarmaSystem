@@ -29,7 +29,6 @@ import {
   ReceitaResponseDto,
   ReceitasPageDto,
 } from './dto/receita-response.dto';
-import { RevisarReceitaDto } from './dto/revisar-receita.dto';
 import { SituacaoReceitaDto } from './dto/situacao-receita.dto';
 import { ReceitasService } from './receitas.service';
 
@@ -79,7 +78,7 @@ export class ReceitasController {
     return this.receitasService.findById(id);
   }
 
-  // Aprovar/revisar são exclusivas do Farmacêutico (Admin não pode).
+  // Aprovar é exclusiva do Farmacêutico (Admin não pode).
   @Post(':id/aprovar')
   @Roles(PerfilUsuario.FARMACEUTICO)
   @HttpCode(HttpStatus.OK)
@@ -90,18 +89,5 @@ export class ReceitasController {
     @CurrentUser() usuario: UsuarioAutenticado,
   ): Promise<ReceitaResponseDto> {
     return this.receitasService.aprovar(id, usuario.id);
-  }
-
-  @Post(':id/revisar')
-  @Roles(PerfilUsuario.FARMACEUTICO)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Marcar receita para revisão (somente Farmacêutico).' })
-  @ApiOkResponse({ type: ReceitaResponseDto })
-  async revisar(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: RevisarReceitaDto,
-    @CurrentUser() usuario: UsuarioAutenticado,
-  ): Promise<ReceitaResponseDto> {
-    return this.receitasService.revisar(id, dto, usuario.id);
   }
 }

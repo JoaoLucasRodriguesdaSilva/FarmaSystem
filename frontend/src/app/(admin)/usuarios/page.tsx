@@ -4,7 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAppSelector } from '@/redux/hooks';
 import { selectUserRole } from '@/redux/slices/authSlice';
 import { RecentUsersTable } from '@/components/usuarios/RecentUsersTable';
-import { usuariosService } from '@/services/usuarios.service';
+import { NewUserModal } from '@/components/usuarios/NewUserModal';
+import {
+  usuariosService,
+  type CreateUsuarioDto,
+} from '@/services/usuarios.service';
 import type { Usuario } from '@/types';
 
 const LIMIT = 20;
@@ -17,6 +21,10 @@ export default function UsuariosPage() {
   const [page, setPage] = useState(1);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  const [modalAberto, setModalAberto] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erroModal, setErroModal] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -35,6 +43,27 @@ export default function UsuariosPage() {
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  async function criarUsuario(input: CreateUsuarioDto) {
+    setSalvando(true);
+    setErroModal(null);
+    try {
+      await usuariosService.criar(input);
+      setModalAberto(false);
+      // Um novo cadastro aparece na primeira página (ordenada por mais recentes).
+      if (page === 1) {
+        await carregar();
+      } else {
+        setPage(1);
+      }
+    } catch (e) {
+      setErroModal(
+        mensagemDeErro(e, 'Não foi possível cadastrar o usuário.'),
+      );
+    } finally {
+      setSalvando(false);
+    }
+  }
 
   // Defesa de UI; a API também bloqueia via RolesGuard (403).
   if (role && role !== 'administrador') {
@@ -56,6 +85,16 @@ export default function UsuariosPage() {
             {total} usuário(s) cadastrado(s)
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            setErroModal(null);
+            setModalAberto(true);
+          }}
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+        >
+          Novo usuário
+        </button>
       </div>
 
       {erro && (
@@ -87,6 +126,21 @@ export default function UsuariosPage() {
           Próxima
         </button>
       </div>
+
+      <NewUserModal
+        aberto={modalAberto}
+        salvando={salvando}
+        erro={erroModal}
+        onClose={() => setModalAberto(false)}
+        onSubmit={criarUsuario}
+      />
     </div>
+  );
+}
+
+function mensagemDeErro(e: unknown, padrao: string): string {
+  return (
+    (e as { response?: { data?: { mensagem?: string } } }).response?.data
+      ?.mensagem ?? padrao
   );
 }

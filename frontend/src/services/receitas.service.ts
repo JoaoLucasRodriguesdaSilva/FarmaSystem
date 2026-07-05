@@ -51,11 +51,4 @@ export const receitasService = {
     const { data } = await api.post<Receita>(`/receitas/${id}/aprovar`);
     return data;
   },
-
-  async revisar(id: number, observacao: string): Promise<Receita> {
-    const { data } = await api.post<Receita>(`/receitas/${id}/revisar`, {
-      observacao,
-    });
-    return data;
-  },
 };

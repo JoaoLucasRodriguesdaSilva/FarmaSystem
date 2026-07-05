@@ -10,7 +10,6 @@ import {
   ReceitaResponseDto,
   ReceitasPageDto,
 } from './dto/receita-response.dto';
-import { RevisarReceitaDto } from './dto/revisar-receita.dto';
 import { SituacaoReceitaDto } from './dto/situacao-receita.dto';
 import { ReceitasRepository } from './receitas.repository';
 
@@ -69,22 +68,6 @@ export class ReceitasService {
       id,
       StatusReceita.APROVADA,
       { farmaceuticoId },
-    );
-    return atualizada as ReceitaResponseDto;
-  }
-
-  /** Marca a receita para revisão, registrando a observação do farmacêutico. */
-  async revisar(
-    id: number,
-    dto: RevisarReceitaDto,
-    farmaceuticoId: number,
-  ): Promise<ReceitaResponseDto> {
-    const receita = await this.findById(id);
-    this.garantirPendente(receita);
-    const atualizada = await this.repository.atualizarStatus(
-      id,
-      StatusReceita.REVISAO,
-      { farmaceuticoId, observacao: dto.observacao },
     );
     return atualizada as ReceitaResponseDto;
   }

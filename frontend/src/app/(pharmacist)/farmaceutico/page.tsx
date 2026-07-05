@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ExpirationAlertsPanel } from '@/components/pharmacist/ExpirationAlertsPanel';
+import { NewBatchModal } from '@/components/pharmacist/NewBatchModal';
 import { PrescriptionsSection } from '@/components/pharmacist/PrescriptionsSection';
 import { StockAlertsPanel } from '@/components/pharmacist/StockAlertsPanel';
 import { WeeklyDispensationsChartSection } from '@/components/pharmacist/WeeklyDispensationsChartSection';
-import { estoqueService } from '@/services/estoque.service';
+import { estoqueService, type NovoLoteInput } from '@/services/estoque.service';
 import { receitasService } from '@/services/receitas.service';
 import type { AlertaEstoque, Receita } from '@/types';
 
@@ -17,6 +18,11 @@ export default function PharmacistPage() {
   const [alertas, setAlertas] = useState<AlertaEstoque[]>([]);
   const [carregandoAlertas, setCarregandoAlertas] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  // Alerta em resolução: abre o modal de novo lote vinculado ao medicamento.
+  const [alertaLote, setAlertaLote] = useState<AlertaEstoque | null>(null);
+  const [salvandoLote, setSalvandoLote] = useState(false);
+  const [erroLote, setErroLote] = useState<string | null>(null);
 
   const alertasVencimento = alertas.filter(
     (a) => a.tipo === 'vencimento_proximo',
@@ -69,30 +75,26 @@ export default function PharmacistPage() {
     }
   }
 
-  async function revisar(receita: Receita) {
-    const observacao = prompt(
-      `Observação para revisão da receita ${receita.codigo}:`,
-    );
-    if (!observacao) return;
-    setProcessandoId(receita.id);
-    setErro(null);
-    try {
-      await receitasService.revisar(receita.id, observacao);
-      await carregarReceitas();
-    } catch (e) {
-      setErro(mensagemDeErro(e, 'Não foi possível enviar para revisão.'));
-    } finally {
-      setProcessandoId(null);
-    }
+  // Resolver um alerta de estoque/vencimento passa pelo registro de um novo
+  // lote: abrimos o modal vinculado ao medicamento do alerta.
+  function resolver(alerta: AlertaEstoque) {
+    setErroLote(null);
+    setAlertaLote(alerta);
   }
 
-  async function resolver(alerta: AlertaEstoque) {
-    setErro(null);
+  async function registrarLote(input: NovoLoteInput) {
+    if (!alertaLote) return;
+    setSalvandoLote(true);
+    setErroLote(null);
     try {
-      await estoqueService.resolverAlerta(alerta.id);
+      await estoqueService.criarLote(input);
+      await estoqueService.resolverAlerta(alertaLote.id);
+      setAlertaLote(null);
       await carregarAlertas();
-    } catch {
-      setErro('Não foi possível resolver o alerta.');
+    } catch (e) {
+      setErroLote(mensagemDeErro(e, 'Não foi possível registrar o lote.'));
+    } finally {
+      setSalvandoLote(false);
     }
   }
 
@@ -138,7 +140,6 @@ export default function PharmacistPage() {
           carregando={carregandoReceitas}
           processandoId={processandoId}
           onAprovar={aprovar}
-          onRevisar={revisar}
         />
 
         <div className="space-y-4">
@@ -157,6 +158,16 @@ export default function PharmacistPage() {
       </div>
 
       <WeeklyDispensationsChartSection />
+
+      <NewBatchModal
+        aberto={alertaLote !== null}
+        medicamentoId={alertaLote?.medicamentoId ?? null}
+        medicamentoNome={alertaLote?.medicamentoNome}
+        salvando={salvandoLote}
+        erro={erroLote}
+        onClose={() => setAlertaLote(null)}
+        onSubmit={registrarLote}
+      />
     </div>
   );
 }

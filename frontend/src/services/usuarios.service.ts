@@ -8,6 +8,15 @@ export interface ListarUsuariosParams {
   status?: StatusUsuario;
 }
 
+export interface CreateUsuarioDto {
+  nome: string;
+  email: string;
+  senha: string;
+  perfil: PerfilUsuario;
+  /** Obrigatório apenas para o perfil farmacêutico. */
+  crf?: string;
+}
+
 export const usuariosService = {
   async listar(
     params: ListarUsuariosParams = {},
@@ -16,5 +25,10 @@ export const usuariosService = {
       params,
     });
     return data;
+  },
+
+  async criar(data: CreateUsuarioDto): Promise<Usuario> {
+    const { data: usuario } = await api.post<Usuario>('/usuarios', data);
+    return usuario;
   },
 };
