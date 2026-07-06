@@ -84,7 +84,12 @@ export default function DashboardPage() {
 
       <MetricsCardsSection metricas={metricas} carregando={carregando} />
 
-      <ChartsSection vendas={vendas} receita={receita} carregando={carregando} />
+      <ChartsSection
+        vendas={vendas}
+        receita={receita}
+        periodo={periodo}
+        carregando={carregando}
+      />
 
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <h3 className="mb-3 text-sm font-semibold text-gray-700">

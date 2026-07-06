@@ -18,6 +18,7 @@ interface NewSaleSectionProps {
   erro?: string | null;
   exigeReceita?: boolean;
   receita?: SituacaoReceita | null;
+  avisoReceita?: 'bloqueada' | 'aguardando' | null;
   verificandoReceita?: boolean;
   finalizarLabel?: string;
   onChangeQuantity: (medicamentoId: number, quantidade: number) => void;
@@ -52,6 +53,7 @@ export function NewSaleSection({
   erro,
   exigeReceita,
   receita,
+  avisoReceita,
   verificandoReceita,
   finalizarLabel = 'Finalizar venda',
   onChangeQuantity,
@@ -151,7 +153,14 @@ export function NewSaleSection({
         </div>
         {/* a faixa de receita e o botão de finalizar são renderizados abaixo */}
 
-        {exigeReceita && <ReceitaBanner receita={receita} onVerificar={onVerificarReceita} verificando={verificandoReceita} />}
+        {exigeReceita && (
+          <ReceitaBanner
+            receita={receita}
+            aviso={avisoReceita}
+            onVerificar={onVerificarReceita}
+            verificando={verificandoReceita}
+          />
+        )}
 
         {erro && (
           <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -184,10 +193,12 @@ export function NewSaleSection({
 
 function ReceitaBanner({
   receita,
+  aviso,
   verificando,
   onVerificar,
 }: {
   receita?: SituacaoReceita | null;
+  aviso?: 'bloqueada' | 'aguardando' | null;
   verificando?: boolean;
   onVerificar?: () => void;
 }) {
@@ -217,14 +228,29 @@ function ReceitaBanner({
     );
   }
 
+  // Pendente: uma única faixa que troca de conteúdo/cor conforme a interação,
+  // sempre mantendo o botão "Verificar" — nunca empilha uma segunda mensagem.
+  const bloqueada = aviso === 'bloqueada';
+  const texto = bloqueada
+    ? `A receita ${receita.codigo} ainda não foi aprovada pelo farmacêutico. Aguarde a aprovação.`
+    : aviso === 'aguardando'
+      ? `Receita ${receita.codigo}: ainda aguardando aprovação do farmacêutico.`
+      : `Receita ${receita.codigo} aguardando aprovação do farmacêutico.`;
+  const cores = bloqueada
+    ? 'bg-red-50 text-red-600'
+    : 'bg-amber-50 text-amber-700';
+  const corBotao = bloqueada ? 'text-red-700' : 'text-amber-800';
+
   return (
-    <div className="flex items-center justify-between gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
-      <span>Receita {receita.codigo} aguardando aprovação do farmacêutico.</span>
+    <div
+      className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm ${cores}`}
+    >
+      <span>{texto}</span>
       <button
         type="button"
         onClick={onVerificar}
         disabled={verificando}
-        className="shrink-0 font-medium text-amber-800 underline disabled:opacity-60"
+        className={`shrink-0 font-medium underline disabled:opacity-60 ${corBotao}`}
       >
         {verificando ? 'Verificando…' : 'Verificar'}
       </button>

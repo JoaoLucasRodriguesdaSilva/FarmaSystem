@@ -9,16 +9,29 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { PontoSerie } from '@/types';
+import type { Periodo, PontoSerie } from '@/types';
 
 interface ChartsSectionProps {
   vendas: PontoSerie[];
   receita: PontoSerie[];
+  periodo: Periodo;
   carregando?: boolean;
 }
 
-const dataCurta = (iso: string) =>
-  new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+/**
+ * Rótulo do eixo X de acordo com a granularidade dos marcos do período:
+ * Hoje → hora (08:00); Ano → mês (jan.); Semana/Mês → data (dd/mm).
+ */
+const rotuloMarco = (iso: string, periodo: Periodo): string => {
+  const d = new Date(iso);
+  if (periodo === 'hoje') {
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+  if (periodo === 'ano') {
+    return d.toLocaleDateString('pt-BR', { month: 'short' });
+  }
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+};
 
 const moeda = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -55,11 +68,15 @@ function ChartBox({
 export function ChartsSection({
   vendas,
   receita,
+  periodo,
   carregando,
 }: ChartsSectionProps) {
-  const dadosVendas = vendas.map((p) => ({ data: dataCurta(p.data), valor: p.valor }));
+  const dadosVendas = vendas.map((p) => ({
+    data: rotuloMarco(p.data, periodo),
+    valor: p.valor,
+  }));
   const dadosReceita = receita.map((p) => ({
-    data: dataCurta(p.data),
+    data: rotuloMarco(p.data, periodo),
     valor: p.valor,
   }));
 

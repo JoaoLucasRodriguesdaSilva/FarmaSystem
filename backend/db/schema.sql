@@ -93,8 +93,12 @@ CREATE TABLE IF NOT EXISTS lotes (
     codigo_lote VARCHAR(100) NOT NULL,
     quantidade INTEGER NOT NULL,
     data_validade DATE NOT NULL,
-    data_entrada DATE DEFAULT CURRENT_DATE
+    data_entrada DATE DEFAULT CURRENT_DATE,
+    custo_unitario NUMERIC(10, 2)  -- custo de aquisição por unidade (base do financeiro)
 );
+
+-- Migração idempotente para bases já criadas.
+ALTER TABLE lotes ADD COLUMN IF NOT EXISTS custo_unitario NUMERIC(10, 2);
 
 CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
     id SERIAL PRIMARY KEY,

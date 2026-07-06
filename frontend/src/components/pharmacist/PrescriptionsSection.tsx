@@ -7,6 +7,7 @@ interface PrescriptionsSectionProps {
   carregando?: boolean;
   processandoId?: number | null;
   onAprovar?: (receita: Receita) => void;
+  onRejeitar?: (receita: Receita) => void;
 }
 
 export function PrescriptionsSection({
@@ -14,6 +15,7 @@ export function PrescriptionsSection({
   carregando,
   processandoId,
   onAprovar,
+  onRejeitar,
 }: PrescriptionsSectionProps) {
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-4">
@@ -61,6 +63,14 @@ export function PrescriptionsSection({
               </ul>
 
               <div className="mt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={processandoId === r.id}
+                  onClick={() => onRejeitar?.(r)}
+                  className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                >
+                  {processandoId === r.id ? 'Processando…' : 'Rejeitar'}
+                </button>
                 <button
                   type="button"
                   disabled={processandoId === r.id}

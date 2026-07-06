@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LoteResponseDto {
   @ApiProperty({ example: 1 })
@@ -6,6 +6,9 @@ export class LoteResponseDto {
 
   @ApiProperty({ example: 42 })
   medicamentoId!: number;
+
+  @ApiPropertyOptional({ example: 'Dipirona 500mg' })
+  medicamentoNome?: string;
 
   @ApiProperty({ example: 'LOTE-2026-001' })
   codigoLote!: string;
@@ -18,4 +21,13 @@ export class LoteResponseDto {
 
   @ApiProperty({ example: '2026-06-18' })
   dataEntrada!: string;
+
+  @ApiPropertyOptional({
+    example: 12.5,
+    description: 'Custo de aquisição por unidade.',
+  })
+  custoUnitario?: number;
+
+  @ApiPropertyOptional({ example: 12, description: 'Dias até o vencimento.' })
+  diasParaVencimento?: number;
 }

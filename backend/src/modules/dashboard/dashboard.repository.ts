@@ -19,7 +19,7 @@ export class DashboardRepository {
   }
 
   async metricas(periodo: Periodo): Promise<MetricasDashboardDto> {
-    const { unidade, passo } = periodoParaSql(periodo);
+    const { unidade, total: passo } = periodoParaSql(periodo);
 
     const vendas = await this.db.query<{
       receita_atual: string;
@@ -99,26 +99,68 @@ export class DashboardRepository {
     };
   }
 
-  /** Série temporal de vendas (quantidade) ou receita (soma) no período. */
+  /**
+   * Série temporal de vendas (quantidade) ou receita (soma) no período,
+   * com marcos (buckets) fixos: cada intervalo aparece mesmo sem vendas
+   * (valor 0). Ver {@link periodoParaSql} para a grade de cada período.
+   */
   async serie(
     periodo: Periodo,
     medida: 'quantidade' | 'receita',
   ): Promise<PontoSerieDto[]> {
-    const { unidade, passo, bucket } = periodoParaSql(periodo);
-    const expr = medida === 'receita' ? 'COALESCE(SUM(v.total), 0)' : 'COUNT(*)';
+    const { unidade, total, step, ultimo } = periodoParaSql(periodo);
+    const expr =
+      medida === 'receita' ? 'COALESCE(SUM(v.total), 0)' : 'COUNT(v.id)';
+
+    // A grade de marcos (bucket_ini) muda conforme o período. No mês, exibimos
+    // de 3 em 3 dias (1, 4, …, 28) e sempre o último dia do mês (28/29/30/31);
+    // o UNION deduplica quando o último dia já cai na grade (ex.: fevereiro).
+    let fonteMarcos: string;
+    let params: unknown[];
+    if (periodo === Periodo.MES) {
+      fonteMarcos = `
+         SELECT gs AS bucket_ini
+           FROM generate_series(
+                  (SELECT ini FROM p),
+                  (SELECT ini FROM p) + INTERVAL '27 days',
+                  INTERVAL '3 days'
+                ) AS gs
+         UNION
+         SELECT (SELECT ini FROM p) + INTERVAL '1 month' - INTERVAL '1 day'`;
+      params = [unidade, total];
+    } else {
+      fonteMarcos = `
+         SELECT gs AS bucket_ini
+           FROM generate_series(
+                  (SELECT ini FROM p),
+                  (SELECT ini FROM p) + $3::interval,
+                  $4::interval
+                ) AS gs`;
+      params = [unidade, total, ultimo, step];
+    }
 
     const { rows } = await this.db.query<{ bucket: Date; valor: string }>(
       `WITH p AS (
          SELECT DATE_TRUNC($1, now()) AS ini,
                 DATE_TRUNC($1, now()) + $2::interval AS fim
+       ),
+       buckets AS (
+         SELECT bucket_ini,
+                COALESCE(
+                  LEAD(bucket_ini) OVER (ORDER BY bucket_ini),
+                  (SELECT fim FROM p)
+                ) AS bucket_fim
+         FROM ( ${fonteMarcos} ) AS src
        )
-       SELECT DATE_TRUNC($3, v.criada_em) AS bucket, ${expr} AS valor
-       FROM vendas v, p
-       WHERE v.status = 'concluida'
-         AND v.criada_em >= p.ini AND v.criada_em < p.fim
-       GROUP BY bucket
-       ORDER BY bucket ASC`,
-      [unidade, passo, bucket],
+       SELECT b.bucket_ini AS bucket, ${expr} AS valor
+       FROM buckets b
+       LEFT JOIN vendas v
+         ON v.status = 'concluida'
+        AND v.criada_em >= b.bucket_ini
+        AND v.criada_em <  b.bucket_fim
+       GROUP BY b.bucket_ini
+       ORDER BY b.bucket_ini ASC`,
+      params,
     );
 
     return rows.map((r) => ({

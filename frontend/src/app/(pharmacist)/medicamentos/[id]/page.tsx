@@ -40,7 +40,14 @@ export default function MedicamentoDetalhePage() {
   }, [id]);
 
   async function excluir() {
-    if (!med || !confirm(`Remover o medicamento "${med.nome}"?`)) return;
+    if (
+      !med ||
+      !confirm(
+        `Remover o medicamento "${med.nome}"? Todos os lotes atrelados a ele serão apagados.`,
+      )
+    ) {
+      return;
+    }
     try {
       await medicamentosService.remover(med.id);
       router.push('/medicamentos');

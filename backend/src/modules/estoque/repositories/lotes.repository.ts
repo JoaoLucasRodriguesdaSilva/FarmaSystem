@@ -8,10 +8,13 @@ type Executor = Pick<PoolClient, 'query'> | null;
 interface LoteRow {
   id: number;
   medicamento_id: number;
+  medicamento_nome?: string | null;
   codigo_lote: string;
   quantidade: number;
   data_validade: Date;
   data_entrada: Date;
+  custo_unitario: string | null;
+  dias_para_vencimento?: number | null;
 }
 
 export interface CreateLoteData {
@@ -19,6 +22,7 @@ export interface CreateLoteData {
   codigoLote: string;
   quantidade: number;
   dataValidade: string;
+  custoUnitario?: number;
 }
 
 @Injectable()
@@ -39,10 +43,17 @@ export class LotesRepository {
     return {
       id: row.id,
       medicamentoId: row.medicamento_id,
+      medicamentoNome: row.medicamento_nome ?? undefined,
       codigoLote: row.codigo_lote,
       quantidade: row.quantidade,
       dataValidade: row.data_validade.toISOString().slice(0, 10),
       dataEntrada: row.data_entrada.toISOString().slice(0, 10),
+      custoUnitario:
+        row.custo_unitario != null ? Number(row.custo_unitario) : undefined,
+      diasParaVencimento:
+        row.dias_para_vencimento != null
+          ? Number(row.dias_para_vencimento)
+          : undefined,
     };
   }
 
@@ -52,9 +63,15 @@ export class LotesRepository {
   ): Promise<LoteResponseDto> {
     const { rows } = await this.run<LoteRow>(
       client,
-      `INSERT INTO lotes (medicamento_id, codigo_lote, quantidade, data_validade)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [data.medicamentoId, data.codigoLote, data.quantidade, data.dataValidade],
+      `INSERT INTO lotes (medicamento_id, codigo_lote, quantidade, data_validade, custo_unitario)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [
+        data.medicamentoId,
+        data.codigoLote,
+        data.quantidade,
+        data.dataValidade,
+        data.custoUnitario ?? null,
+      ],
     );
     return this.toResponse(rows[0]);
   }
@@ -74,22 +91,32 @@ export class LotesRepository {
   async findAll(params: {
     medicamentoId?: number;
     vencimentoEm?: number;
+    comEstoque?: boolean;
   }): Promise<LoteResponseDto[]> {
     const cond: string[] = [];
     const valores: unknown[] = [];
     if (params.medicamentoId) {
       valores.push(params.medicamentoId);
-      cond.push(`medicamento_id = $${valores.length}`);
+      cond.push(`l.medicamento_id = $${valores.length}`);
     }
     if (params.vencimentoEm !== undefined) {
       valores.push(params.vencimentoEm);
       cond.push(
-        `data_validade <= CURRENT_DATE + ($${valores.length} || ' days')::interval`,
+        `l.data_validade <= CURRENT_DATE + ($${valores.length} || ' days')::interval`,
       );
+    }
+    // "Ainda tem remédio à venda": apenas lotes com saldo positivo.
+    if (params.comEstoque) {
+      cond.push(`l.quantidade > 0`);
     }
     const where = cond.length ? `WHERE ${cond.join(' AND ')}` : '';
     const { rows } = await this.db.query<LoteRow>(
-      `SELECT * FROM lotes ${where} ORDER BY data_validade ASC`,
+      `SELECT l.*, m.nome AS medicamento_nome,
+              (l.data_validade - CURRENT_DATE) AS dias_para_vencimento
+       FROM lotes l
+       JOIN medicamentos m ON m.id = l.medicamento_id
+       ${where}
+       ORDER BY l.data_validade ASC`,
       valores,
     );
     return rows.map((r) => this.toResponse(r));

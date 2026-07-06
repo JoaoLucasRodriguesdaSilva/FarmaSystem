@@ -20,6 +20,7 @@ export interface NovoLoteInput {
   codigoLote: string;
   quantidade: number;
   dataValidade: string;
+  custoUnitario: number;
 }
 
 export interface NovaMovimentacaoInput {
@@ -41,7 +42,11 @@ export const estoqueService = {
   },
 
   async listarLotes(
-    params: { medicamentoId?: number; vencimentoEm?: number } = {},
+    params: {
+      medicamentoId?: number;
+      vencimentoEm?: number;
+      comEstoque?: boolean;
+    } = {},
   ): Promise<Lote[]> {
     const { data } = await api.get<Lote[]>('/estoque/lotes', { params });
     return data;

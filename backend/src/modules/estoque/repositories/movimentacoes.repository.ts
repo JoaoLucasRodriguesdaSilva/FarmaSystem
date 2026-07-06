@@ -9,6 +9,7 @@ type Executor = Pick<PoolClient, 'query'> | null;
 interface MovimentacaoRow {
   id: number;
   medicamento_id: number;
+  medicamento_nome?: string | null;
   lote_id: number | null;
   tipo: TipoMovimentacao;
   quantidade: number;
@@ -44,6 +45,7 @@ export class MovimentacoesRepository {
     return {
       id: row.id,
       medicamentoId: row.medicamento_id,
+      medicamentoNome: row.medicamento_nome ?? undefined,
       loteId: row.lote_id ?? undefined,
       tipo: row.tipo,
       quantidade: row.quantidade,
@@ -83,19 +85,23 @@ export class MovimentacoesRepository {
     const valores: unknown[] = [];
     if (params.tipo) {
       valores.push(params.tipo);
-      cond.push(`tipo = $${valores.length}`);
+      cond.push(`me.tipo = $${valores.length}`);
     }
     if (params.dataInicio) {
       valores.push(params.dataInicio);
-      cond.push(`data >= $${valores.length}`);
+      cond.push(`me.data >= $${valores.length}`);
     }
     if (params.dataFim) {
       valores.push(params.dataFim);
-      cond.push(`data <= $${valores.length}`);
+      cond.push(`me.data <= $${valores.length}`);
     }
     const where = cond.length ? `WHERE ${cond.join(' AND ')}` : '';
     const { rows } = await this.db.query<MovimentacaoRow>(
-      `SELECT * FROM movimentacoes_estoque ${where} ORDER BY data DESC`,
+      `SELECT me.*, m.nome AS medicamento_nome
+       FROM movimentacoes_estoque me
+       JOIN medicamentos m ON m.id = me.medicamento_id
+       ${where}
+       ORDER BY me.data DESC`,
       valores,
     );
     return rows.map((r) => this.toResponse(r));

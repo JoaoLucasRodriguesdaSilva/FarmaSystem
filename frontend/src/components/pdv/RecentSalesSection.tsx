@@ -30,9 +30,10 @@ export function RecentSalesSection({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    // max-h-36 (144px) exibe ~3 linhas + cabeçalho; o excedente vira scroll.
+    <div className="max-h-36 overflow-y-auto rounded-xl border border-gray-200 bg-white">
       <table className="min-w-full divide-y divide-gray-200 text-sm">
-        <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+        <thead className="sticky top-0 z-10 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
           <tr>
             <th className="px-4 py-2 font-medium">Código</th>
             <th className="px-4 py-2 font-medium">Hora</th>

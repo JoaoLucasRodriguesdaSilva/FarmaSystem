@@ -7,10 +7,7 @@ import {
   MargemCategoriaDto,
   PontoReceitaDespesaDto,
 } from './dto/financeiro-response.dto';
-import {
-  CUSTO_ESTIMADO_RATIO,
-  FinanceiroRepository,
-} from './financeiro.repository';
+import { FinanceiroRepository } from './financeiro.repository';
 import { ArquivoRelatorio, RelatoriosService } from './relatorios.service';
 
 @Injectable()
@@ -25,12 +22,17 @@ export class FinanceiroService {
   }
 
   async kpis(periodo: Periodo): Promise<FinanceiroKpisDto> {
-    const receita = await this.repository.receitaAtualEAnterior(periodo);
+    const [receita, custo] = await Promise.all([
+      this.repository.receitaAtualEAnterior(periodo),
+      this.repository.custoAtualEAnterior(periodo),
+    ]);
 
-    const despesasAtual = receita.atual * CUSTO_ESTIMADO_RATIO;
-    const despesasAnt = receita.anterior * CUSTO_ESTIMADO_RATIO;
+    const despesasAtual = custo.atual;
+    const despesasAnt = custo.anterior;
     const lucroAtual = receita.atual - despesasAtual;
     const lucroAnt = receita.anterior - despesasAnt;
+    const margemLucro =
+      receita.atual > 0 ? Math.round((lucroAtual / receita.atual) * 100) : 0;
 
     return {
       receitaTotal: {
@@ -45,7 +47,7 @@ export class FinanceiroService {
         valor: this.arredondar(lucroAtual),
         variacao: this.repository.pctVariacao(lucroAtual, lucroAnt),
       },
-      margemLucro: Math.round((1 - CUSTO_ESTIMADO_RATIO) * 100),
+      margemLucro,
     };
   }
 

@@ -25,6 +25,10 @@ import type {
 
 const CART_KEY = 'farmasystem.pdv.cart';
 const RECEITA_KEY = 'farmasystem.pdv.receita';
+// Histórico da sessão: sessionStorage sobrevive à navegação entre páginas e a
+// recarregamentos, mas é apagado ao fechar a aba. O logout limpa explicitamente
+// (ver authService.logout).
+const VENDAS_KEY = 'farmasystem.pdv.vendas';
 
 /**
  * PDV (Ponto de Venda): fonte da verdade do atendimento atual. O carrinho e a
@@ -48,6 +52,11 @@ export default function PdvPage() {
   const [enviandoReceita, setEnviandoReceita] = useState(false);
   const [erroReceita, setErroReceita] = useState<string | null>(null);
   const [verificandoReceita, setVerificandoReceita] = useState(false);
+  // Alerta exibido na própria faixa de receita (evita empilhar mensagens):
+  // 'bloqueada' = tentou vender sem aprovação; 'aguardando' = reverificou e segue pendente.
+  const [avisoReceita, setAvisoReceita] = useState<
+    'bloqueada' | 'aguardando' | null
+  >(null);
 
   const [finalizando, setFinalizando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -106,6 +115,8 @@ export default function PdvPage() {
       if (salvo) setItens(JSON.parse(salvo) as CartItem[]);
       const receitaSalva = localStorage.getItem(RECEITA_KEY);
       if (receitaSalva) setReceita(JSON.parse(receitaSalva) as SituacaoReceita);
+      const vendasSalvas = sessionStorage.getItem(VENDAS_KEY);
+      if (vendasSalvas) setVendasRecentes(JSON.parse(vendasSalvas) as Venda[]);
     } catch {
       // ignora estado corrompido
     }
@@ -123,6 +134,12 @@ export default function PdvPage() {
     if (receita) localStorage.setItem(RECEITA_KEY, JSON.stringify(receita));
     else localStorage.removeItem(RECEITA_KEY);
   }, [receita, carregado]);
+
+  // Mantém o histórico da sessão vivo ao navegar entre páginas do sistema.
+  useEffect(() => {
+    if (!carregado) return;
+    sessionStorage.setItem(VENDAS_KEY, JSON.stringify(vendasRecentes));
+  }, [vendasRecentes, carregado]);
 
   function adicionar(medicamento: Medicamento) {
     setErro(null);
@@ -175,6 +192,7 @@ export default function PdvPage() {
     setClienteId(null);
     setDesconto(0);
     setReceita(null);
+    setAvisoReceita(null);
     setErro(null);
   }
 
@@ -190,6 +208,7 @@ export default function PdvPage() {
         pacienteNome: criada.pacienteNome,
         status: criada.status,
       });
+      setAvisoReceita(null);
       setModalReceita(false);
     } catch (e) {
       setErroReceita(mensagemDeErro(e, 'Não foi possível registrar a receita.'));
@@ -214,6 +233,31 @@ export default function PdvPage() {
     }
   }
 
+  /**
+   * Receita rejeitada pelo farmacêutico: a venda não pode prosseguir. Descarta
+   * o carrinho/dados da compra e informa o motivo (limpar zera o erro antes).
+   */
+  function cancelarPorRejeicao() {
+    limpar();
+    setErro(
+      'A receita foi rejeitada pelo farmacêutico. A venda foi cancelada e o carrinho, esvaziado.',
+    );
+  }
+
+  /**
+   * Verificação acionada pelo botão da faixa de receita: se aprovada, a faixa
+   * passa a exibir a aprovação; se rejeitada, cancela a compra; caso contrário,
+   * mostra "ainda aguardando" (com o botão preservado), sem empilhar mensagens.
+   */
+  async function reverificarReceita() {
+    const atual = await verificarReceita();
+    if (atual?.status === 'rejeitada') {
+      cancelarPorRejeicao();
+      return;
+    }
+    setAvisoReceita(atual?.status === 'aprovada' ? null : 'aguardando');
+  }
+
   async function finalizar() {
     if (itens.length === 0) return;
 
@@ -225,12 +269,17 @@ export default function PdvPage() {
       }
       if (receita.status !== 'aprovada') {
         const atual = await verificarReceita();
-        if (atual?.status !== 'aprovada') {
-          setErro(
-            'A receita ainda não foi aprovada pelo farmacêutico. Aguarde a aprovação.',
-          );
+        if (atual?.status === 'rejeitada') {
+          cancelarPorRejeicao();
           return;
         }
+        if (atual?.status !== 'aprovada') {
+          // Substitui a faixa de "aguardando" por um alerta de bloqueio no mesmo
+          // lugar, em vez de empilhar uma segunda mensagem de erro.
+          setAvisoReceita('bloqueada');
+          return;
+        }
+        setAvisoReceita(null);
       }
     }
 
@@ -301,6 +350,7 @@ export default function PdvPage() {
           erro={erro}
           exigeReceita={exigeReceita}
           receita={receita}
+          avisoReceita={avisoReceita}
           verificandoReceita={verificandoReceita}
           finalizarLabel={finalizarLabel}
           onChangeQuantity={alterarQuantidade}
@@ -308,7 +358,7 @@ export default function PdvPage() {
           onChangeCliente={setClienteId}
           onChangeDesconto={setDesconto}
           onChangeFormaPagamento={setFormaPagamento}
-          onVerificarReceita={verificarReceita}
+          onVerificarReceita={reverificarReceita}
           onFinalizar={finalizar}
           onLimpar={limpar}
         />

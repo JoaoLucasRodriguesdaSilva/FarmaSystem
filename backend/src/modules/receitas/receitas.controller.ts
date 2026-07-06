@@ -90,4 +90,17 @@ export class ReceitasController {
   ): Promise<ReceitaResponseDto> {
     return this.receitasService.aprovar(id, usuario.id);
   }
+
+  // Rejeitar é exclusiva do Farmacêutico (Admin não pode), como o aprovar.
+  @Post(':id/rejeitar')
+  @Roles(PerfilUsuario.FARMACEUTICO)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Rejeitar receita (somente Farmacêutico).' })
+  @ApiOkResponse({ type: ReceitaResponseDto })
+  async rejeitar(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() usuario: UsuarioAutenticado,
+  ): Promise<ReceitaResponseDto> {
+    return this.receitasService.rejeitar(id, usuario.id);
+  }
 }

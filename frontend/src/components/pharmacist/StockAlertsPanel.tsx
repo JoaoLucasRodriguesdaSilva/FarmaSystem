@@ -6,7 +6,6 @@ interface StockAlertsPanelProps {
   alertas: AlertaEstoque[];
   carregando?: boolean;
   onResolver?: (alerta: AlertaEstoque) => void;
-  onGerarReposicao?: (alerta: AlertaEstoque) => void;
 }
 
 const ROTULO_TIPO: Record<string, string> = {
@@ -18,7 +17,6 @@ export function StockAlertsPanel({
   alertas,
   carregando,
   onResolver,
-  onGerarReposicao,
 }: StockAlertsPanelProps) {
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-4">
@@ -62,13 +60,6 @@ export function StockAlertsPanel({
                   </div>
                 </div>
                 <div className="mt-2 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onGerarReposicao?.(a)}
-                    className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
-                  >
-                    Gerar reposição
-                  </button>
                   <button
                     type="button"
                     onClick={() => onResolver?.(a)}

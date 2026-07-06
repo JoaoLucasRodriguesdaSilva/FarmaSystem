@@ -80,6 +80,7 @@ export class EstoqueService {
           codigoLote: dto.codigoLote,
           quantidade: dto.quantidade,
           dataValidade: dto.dataValidade,
+          custoUnitario: dto.custoUnitario,
         },
         client,
       );

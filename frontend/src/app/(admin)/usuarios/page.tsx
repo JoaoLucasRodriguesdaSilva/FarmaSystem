@@ -5,9 +5,11 @@ import { useAppSelector } from '@/redux/hooks';
 import { selectUserRole } from '@/redux/slices/authSlice';
 import { RecentUsersTable } from '@/components/usuarios/RecentUsersTable';
 import { NewUserModal } from '@/components/usuarios/NewUserModal';
+import { EditUserModal } from '@/components/usuarios/EditUserModal';
 import {
   usuariosService,
   type CreateUsuarioDto,
+  type UpdateUsuarioDto,
 } from '@/services/usuarios.service';
 import type { Usuario } from '@/types';
 
@@ -25,6 +27,10 @@ export default function UsuariosPage() {
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erroModal, setErroModal] = useState<string | null>(null);
+
+  const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+  const [erroEdicao, setErroEdicao] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -62,6 +68,22 @@ export default function UsuariosPage() {
       );
     } finally {
       setSalvando(false);
+    }
+  }
+
+  async function editarUsuario(id: number, input: UpdateUsuarioDto) {
+    setSalvandoEdicao(true);
+    setErroEdicao(null);
+    try {
+      await usuariosService.atualizar(id, input);
+      setUsuarioEditando(null);
+      await carregar();
+    } catch (e) {
+      setErroEdicao(
+        mensagemDeErro(e, 'Não foi possível atualizar o usuário.'),
+      );
+    } finally {
+      setSalvandoEdicao(false);
     }
   }
 
@@ -103,7 +125,14 @@ export default function UsuariosPage() {
         </p>
       )}
 
-      <RecentUsersTable usuarios={usuarios} carregando={carregando} />
+      <RecentUsersTable
+        usuarios={usuarios}
+        carregando={carregando}
+        onEditUser={(usuario) => {
+          setErroEdicao(null);
+          setUsuarioEditando(usuario);
+        }}
+      />
 
       <div className="flex items-center justify-end gap-2">
         <button
@@ -133,6 +162,14 @@ export default function UsuariosPage() {
         erro={erroModal}
         onClose={() => setModalAberto(false)}
         onSubmit={criarUsuario}
+      />
+
+      <EditUserModal
+        usuario={usuarioEditando}
+        salvando={salvandoEdicao}
+        erro={erroEdicao}
+        onClose={() => setUsuarioEditando(null)}
+        onSubmit={editarUsuario}
       />
     </div>
   );

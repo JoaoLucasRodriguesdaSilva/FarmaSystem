@@ -72,6 +72,24 @@ export class ReceitasService {
     return atualizada as ReceitaResponseDto;
   }
 
+  /**
+   * Rejeição clínica/legal: muda o status para `rejeitada` e registra o
+   * farmacêutico responsável (auditoria). A venda vinculada no PDV é cancelada.
+   */
+  async rejeitar(
+    id: number,
+    farmaceuticoId: number,
+  ): Promise<ReceitaResponseDto> {
+    const receita = await this.findById(id);
+    this.garantirPendente(receita);
+    const atualizada = await this.repository.atualizarStatus(
+      id,
+      StatusReceita.REJEITADA,
+      { farmaceuticoId },
+    );
+    return atualizada as ReceitaResponseDto;
+  }
+
   private garantirPendente(receita: ReceitaResponseDto): void {
     if (receita.status !== StatusReceita.PENDENTE) {
       throw new ConflictException({

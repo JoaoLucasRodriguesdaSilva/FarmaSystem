@@ -100,7 +100,9 @@ export class MedicamentosController {
   @Delete(':id')
   @Roles(PerfilUsuario.ADMINISTRADOR)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Remover medicamento (soft-delete).' })
+  @ApiOperation({
+    summary: 'Remover medicamento (soft-delete + exclui os lotes atrelados).',
+  })
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.medicamentosService.remove(id);
   }

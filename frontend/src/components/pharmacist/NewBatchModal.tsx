@@ -17,12 +17,14 @@ interface FormState {
   codigoLote: string;
   quantidade: string;
   dataValidade: string;
+  custoUnitario: string;
 }
 
 const VAZIO: FormState = {
   codigoLote: '',
   quantidade: '',
   dataValidade: '',
+  custoUnitario: '',
 };
 
 export function NewBatchModal({
@@ -54,6 +56,7 @@ export function NewBatchModal({
       codigoLote: form.codigoLote,
       quantidade: Number(form.quantidade),
       dataValidade: form.dataValidade,
+      custoUnitario: Number(form.custoUnitario),
     });
   }
 
@@ -90,6 +93,16 @@ export function NewBatchModal({
             required
             value={form.quantidade}
             onChange={(e) => atualizar('quantidade', e.target.value)}
+          />
+          <input
+            className={campo}
+            placeholder="Preço unit. (R$) *"
+            type="number"
+            min={0}
+            step="0.01"
+            required
+            value={form.custoUnitario}
+            onChange={(e) => atualizar('custoUnitario', e.target.value)}
           />
           <label className="flex flex-col gap-1 text-sm text-gray-600">
             Validade *

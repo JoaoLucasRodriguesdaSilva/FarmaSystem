@@ -7,6 +7,9 @@ interface MedicinesTableProps {
   medicamentos: Medicamento[];
   carregando?: boolean;
   onRowClick?: (medicamento: Medicamento) => void;
+  /** Quando fornecido, exibe a coluna de ações com o botão Remover. */
+  onRemove?: (medicamento: Medicamento) => void;
+  removendoId?: number | null;
 }
 
 const moeda = new Intl.NumberFormat('pt-BR', {
@@ -18,6 +21,8 @@ export function MedicinesTable({
   medicamentos,
   carregando,
   onRowClick,
+  onRemove,
+  removendoId,
 }: MedicinesTableProps) {
   if (carregando) {
     return (
@@ -45,6 +50,7 @@ export function MedicinesTable({
             <th className="px-4 py-3 font-medium">Preço</th>
             <th className="px-4 py-3 font-medium">Estoque</th>
             <th className="px-4 py-3 font-medium">Status</th>
+            {onRemove && <th className="px-4 py-3 font-medium text-right">Ações</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -66,6 +72,21 @@ export function MedicinesTable({
               <td className="px-4 py-3">
                 <StatusEstoqueBadge status={m.statusEstoque} />
               </td>
+              {onRemove && (
+                <td className="px-4 py-3 text-right">
+                  <button
+                    type="button"
+                    disabled={removendoId === m.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove(m);
+                    }}
+                    className="rounded-lg border border-red-300 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    {removendoId === m.id ? 'Removendo…' : 'Remover'}
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

@@ -1,6 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsISO8601, IsOptional, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsISO8601,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
 import { StatusEstoque } from '../../../common/enums/status-estoque.enum';
 import { TipoMovimentacao } from '../../../common/enums/tipo-movimentacao.enum';
 
@@ -39,6 +47,16 @@ export class ListLotesQueryDto {
   @IsInt()
   @Min(0)
   vencimentoEm?: number;
+
+  @ApiPropertyOptional({
+    description: 'Somente lotes com saldo (quantidade > 0).',
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === undefined ? undefined : value === 'true' || value === true,
+  )
+  @IsBoolean()
+  comEstoque?: boolean;
 }
 
 export class ListMovimentacoesQueryDto {

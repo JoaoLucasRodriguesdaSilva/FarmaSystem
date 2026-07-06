@@ -167,13 +167,14 @@ Retorna o estoque agregado por medicamento, com status.
 #### `GET /estoque/lotes`
 Listagem de lotes, com filtro opcional por medicamento ou janela de vencimento.
 - **Acesso:** Administrador, Farmacêutico
-- **Query:** `medicamentoId`, `vencimentoEm` (dias)
-- **Response 200:** Array de `Lote`
+- **Query:** `medicamentoId`, `vencimentoEm` (dias), `comEstoque` (boolean — apenas lotes com `quantidade > 0`)
+- **Response 200:** Array de `Lote` (inclui `medicamentoNome` e `diasParaVencimento`)
 
 #### `POST /estoque/lotes`
 Registra um novo lote de medicamento.
 - **Acesso:** Administrador, Farmacêutico
-- **Body:** `{ medicamentoId, codigoLote, quantidade, dataValidade, fornecedorId }`
+- **Body:** `{ medicamentoId, codigoLote, quantidade, dataValidade, custoUnitario, fornecedorId? }`
+  (`custoUnitario` = custo de aquisição por unidade; base do custo no financeiro)
 - **Response 201:** Lote criado.
 
 #### `GET /estoque/movimentacoes`
@@ -330,6 +331,12 @@ Detalhes da receita.
 Marca a receita como aprovada.
 - **Acesso:** Farmacêutico
 - **Response 200:** Receita aprovada.
+
+#### `POST /receitas/{id}/rejeitar`
+Marca a receita como rejeitada (a venda vinculada no PDV é cancelada).
+- **Acesso:** Farmacêutico
+- **Response 200:** Receita rejeitada.
+- **Response 409:** `RECEITA_JA_ANALISADA` se não estiver mais pendente.
 
 #### `POST /receitas/{id}/revisar`
 Marca a receita como pendente de revisão.

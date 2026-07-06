@@ -69,10 +69,13 @@ export type TipoMovimentacao = 'entrada' | 'saida';
 export interface Lote {
   id: number;
   medicamentoId: number;
+  medicamentoNome?: string;
   codigoLote: string;
   quantidade: number;
   dataValidade: string;
   dataEntrada: string;
+  custoUnitario?: number;
+  diasParaVencimento?: number;
 }
 
 export interface EstoqueItem {
@@ -88,6 +91,7 @@ export interface EstoqueItem {
 export interface Movimentacao {
   id: number;
   medicamentoId: number;
+  medicamentoNome?: string;
   loteId?: number;
   tipo: TipoMovimentacao;
   quantidade: number;

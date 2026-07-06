@@ -13,10 +13,13 @@ export default function MedicamentosPage() {
   const role = useAppSelector(selectUserRole);
   const podeCadastrar = role === 'administrador' || role === 'farmaceutico';
 
+  const podeRemover = role === 'administrador';
+
   const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
   const [busca, setBusca] = useState('');
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [removendoId, setRemovendoId] = useState<number | null>(null);
 
   const carregar = useCallback(async (termo: string) => {
     setCarregando(true);
@@ -37,6 +40,26 @@ export default function MedicamentosPage() {
   useEffect(() => {
     void carregar('');
   }, [carregar]);
+
+  async function remover(medicamento: Medicamento) {
+    if (
+      !confirm(
+        `Remover o medicamento "${medicamento.nome}"? Todos os lotes atrelados a ele serão apagados.`,
+      )
+    ) {
+      return;
+    }
+    setRemovendoId(medicamento.id);
+    setErro(null);
+    try {
+      await medicamentosService.remover(medicamento.id);
+      setMedicamentos((atual) => atual.filter((m) => m.id !== medicamento.id));
+    } catch {
+      setErro('Não foi possível remover o medicamento.');
+    } finally {
+      setRemovendoId(null);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -84,6 +107,8 @@ export default function MedicamentosPage() {
         medicamentos={medicamentos}
         carregando={carregando}
         onRowClick={(m) => router.push(`/medicamentos/${m.id}`)}
+        onRemove={podeRemover ? remover : undefined}
+        removendoId={removendoId}
       />
     </div>
   );

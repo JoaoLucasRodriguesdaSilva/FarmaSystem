@@ -273,12 +273,25 @@ export class MedicamentosRepository {
     );
   }
 
+  /**
+   * Soft-delete do medicamento (mantém o histórico de vendas) e remoção física
+   * de todos os lotes atrelados, zerando o estoque — tudo numa transação. As
+   * movimentações apenas perdem a referência ao lote (FK ON DELETE SET NULL).
+   */
   async softDelete(id: number): Promise<boolean> {
-    const { rowCount } = await this.db.query(
-      `UPDATE medicamentos SET ativo = FALSE WHERE id = $1 AND ativo = TRUE`,
-      [id],
-    );
-    return (rowCount ?? 0) > 0;
+    return this.db.transaction(async (client) => {
+      const { rowCount } = await client.query(
+        `UPDATE medicamentos
+           SET ativo = FALSE,
+               estoque_atual = 0,
+               status_estoque = 'esgotado'::status_estoque
+         WHERE id = $1 AND ativo = TRUE`,
+        [id],
+      );
+      if ((rowCount ?? 0) === 0) return false;
+      await client.query(`DELETE FROM lotes WHERE medicamento_id = $1`, [id]);
+      return true;
+    });
   }
 
   /**

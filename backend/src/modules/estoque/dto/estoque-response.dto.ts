@@ -46,6 +46,9 @@ export class MovimentacaoResponseDto {
   @ApiProperty({ example: 42 })
   medicamentoId!: number;
 
+  @ApiPropertyOptional({ example: 'Dipirona 500mg' })
+  medicamentoNome?: string;
+
   @ApiPropertyOptional({ example: 7 })
   loteId?: number;
 

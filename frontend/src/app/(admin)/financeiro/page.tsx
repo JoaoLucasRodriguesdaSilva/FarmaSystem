@@ -118,13 +118,6 @@ export default function FinanceiroPage() {
           </div>
         ))}
       </div>
-      {kpis && (
-        <p className="text-xs text-gray-400">
-          Margem de lucro estimada: {kpis.margemLucro}% (custo de mercadoria
-          estimado, pois o cadastro não armazena custo de aquisição).
-        </p>
-      )}
-
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard
           titulo="Receita vs Despesas"

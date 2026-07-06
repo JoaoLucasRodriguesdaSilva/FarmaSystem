@@ -1,13 +1,17 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { MedicamentoAutocomplete } from '@/components/estoque/MedicamentoAutocomplete';
 import { StockTable } from '@/components/estoque/StockTable';
+import { useAppSelector } from '@/redux/hooks';
+import { selectUserRole } from '@/redux/slices/authSlice';
 import { estoqueService } from '@/services/estoque.service';
 import type { EstoqueItem, Lote, Movimentacao } from '@/types';
 
 type Aba = 'estoque' | 'lotes' | 'movimentacoes';
 
 export default function EstoquePage() {
+  const role = useAppSelector(selectUserRole);
   const [aba, setAba] = useState<Aba>('estoque');
   const [itens, setItens] = useState<EstoqueItem[]>([]);
   const [lotes, setLotes] = useState<Lote[]>([]);
@@ -20,8 +24,11 @@ export default function EstoquePage() {
     codigoLote: '',
     quantidade: '',
     dataValidade: '',
+    custoUnitario: '',
   });
   const [salvando, setSalvando] = useState(false);
+  // Remonta o autocomplete após salvar, limpando o texto digitado no campo.
+  const [loteFormKey, setLoteFormKey] = useState(0);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -48,6 +55,10 @@ export default function EstoquePage() {
 
   async function adicionarLote(event: FormEvent) {
     event.preventDefault();
+    if (!novoLote.medicamentoId) {
+      setErro('Selecione um medicamento pela busca por nome.');
+      return;
+    }
     setSalvando(true);
     setErro(null);
     try {
@@ -56,13 +67,16 @@ export default function EstoquePage() {
         codigoLote: novoLote.codigoLote,
         quantidade: Number(novoLote.quantidade),
         dataValidade: novoLote.dataValidade,
+        custoUnitario: Number(novoLote.custoUnitario),
       });
       setNovoLote({
         medicamentoId: '',
         codigoLote: '',
         quantidade: '',
         dataValidade: '',
+        custoUnitario: '',
       });
+      setLoteFormKey((k) => k + 1);
       await carregar();
     } catch (e) {
       const msg =
@@ -83,6 +97,16 @@ export default function EstoquePage() {
     { id: 'movimentacoes', rotulo: 'Movimentações' },
   ];
 
+  // Estoque é exclusivo de administrador/farmacêutico; o atendente não acessa.
+  // Defesa de UI — a API também bloqueia via RolesGuard (403).
+  if (role && role !== 'administrador' && role !== 'farmaceutico') {
+    return (
+      <p className="text-sm text-gray-600">
+        Você não tem permissão para acessar o estoque.
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold text-gray-800">Estoque</h2>
@@ -96,16 +120,16 @@ export default function EstoquePage() {
       {/* Entrada de lote */}
       <form
         onSubmit={adicionarLote}
-        className="grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-white p-4 sm:grid-cols-5"
+        className="grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-white p-4 sm:grid-cols-6"
       >
-        <input
-          className={campo}
-          placeholder="ID do medicamento *"
-          required
-          type="number"
-          value={novoLote.medicamentoId}
-          onChange={(e) =>
-            setNovoLote((s) => ({ ...s, medicamentoId: e.target.value }))
+        <MedicamentoAutocomplete
+          key={loteFormKey}
+          className={`${campo} w-full`}
+          onSelect={(m) =>
+            setNovoLote((s) => ({
+              ...s,
+              medicamentoId: m ? String(m.id) : '',
+            }))
           }
         />
         <input
@@ -126,6 +150,18 @@ export default function EstoquePage() {
           value={novoLote.quantidade}
           onChange={(e) =>
             setNovoLote((s) => ({ ...s, quantidade: e.target.value }))
+          }
+        />
+        <input
+          className={campo}
+          placeholder="Preço unit. (R$) *"
+          required
+          type="number"
+          min={0}
+          step="0.01"
+          value={novoLote.custoUnitario}
+          onChange={(e) =>
+            setNovoLote((s) => ({ ...s, custoUnitario: e.target.value }))
           }
         />
         <input
@@ -185,7 +221,9 @@ export default function EstoquePage() {
                   <td className="px-4 py-3 font-medium text-gray-800">
                     {l.codigoLote}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">#{l.medicamentoId}</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {l.medicamentoNome ?? `#${l.medicamentoId}`}
+                  </td>
                   <td className="px-4 py-3 text-gray-600">{l.quantidade}</td>
                   <td className="px-4 py-3 text-gray-600">{l.dataValidade}</td>
                   <td className="px-4 py-3 text-gray-600">{l.dataEntrada}</td>
@@ -214,7 +252,9 @@ export default function EstoquePage() {
                   <td className="px-4 py-3 text-gray-600">
                     {new Date(m.data).toLocaleString('pt-BR')}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">#{m.medicamentoId}</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {m.medicamentoNome ?? `#${m.medicamentoId}`}
+                  </td>
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${

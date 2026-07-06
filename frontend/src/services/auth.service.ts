@@ -36,6 +36,10 @@ export const authService = {
     } finally {
       tokenStorage.clear();
       clearAccessCookie();
+      // Encerra a sessão do PDV: o histórico de vendas não deve vazar entre logins.
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('farmasystem.pdv.vendas');
+      }
     }
   },
 

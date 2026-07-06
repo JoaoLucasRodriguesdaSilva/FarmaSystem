@@ -31,7 +31,12 @@ const NAV: NavConfig[] = [
   },
   { href: '/pdv', label: 'Vendas (PDV)', icon: '🛒', perfis: [] },
   { href: '/medicamentos', label: 'Medicamentos', icon: '💊', perfis: [] },
-  { href: '/estoque', label: 'Estoque', icon: '📦', perfis: [] },
+  {
+    href: '/estoque',
+    label: 'Estoque',
+    icon: '📦',
+    perfis: ['administrador', 'farmaceutico'],
+  },
   { href: '/clientes', label: 'Clientes', icon: '🧑', perfis: [] },
   {
     href: '/fornecedores',

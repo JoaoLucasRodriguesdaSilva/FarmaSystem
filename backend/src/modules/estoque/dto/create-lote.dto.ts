@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   IsInt,
   IsISO8601,
+  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
@@ -30,6 +31,15 @@ export class CreateLoteDto {
   @ApiProperty({ example: '2027-05-30' })
   @IsISO8601()
   dataValidade!: string;
+
+  @ApiProperty({
+    example: 12.5,
+    description: 'Custo de aquisição por unidade (base do cálculo do financeiro).',
+  })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  custoUnitario!: number;
 
   @ApiPropertyOptional({
     example: 1,
