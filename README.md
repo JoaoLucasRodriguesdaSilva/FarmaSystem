@@ -24,64 +24,177 @@ frontend/   # Aplicação Next.js
 
 ## Pré-requisitos
 
-- Node.js >= 20
-- PostgreSQL >= 14
-- MongoDB >= 6
+- **Node.js** >= 20 (inclui o npm)
+- **PostgreSQL** >= 14 — banco relacional primário
+- **MongoDB** >= 6 — armazenamento de mídias (imagens/bulas) via GridFS
 
-Ou, alternativamente, apenas **Docker** + **Docker Compose** (ver
-[Executar com Docker](#executar-com-docker)).
-
-## Setup
+Confira que os serviços estão instalados e no `PATH`:
 
 ```bash
-# Instalar dependências de todos os workspaces
+node -v        # v20+
+psql --version # 14+
+mongod --version
+```
+
+---
+
+## 1. Configurar o PostgreSQL
+
+1. Garanta que o serviço do PostgreSQL está em execução.
+   - **Windows**: o instalador oficial já registra o serviço "postgresql-x64-1x"
+     (inicia automaticamente). Verifique em *Serviços* ou com
+     `pg_ctl status`.
+   - **Linux/macOS**: `sudo service postgresql start` ou `brew services start postgresql`.
+
+2. Crie o banco de dados usado pela aplicação (`farmasystem`). Ajuste usuário/senha
+   conforme a sua instalação (o padrão dos exemplos abaixo é `postgres` / `postgres`):
+
+   ```bash
+   # Cria o banco (usa o superusuário 'postgres')
+   createdb -U postgres farmasystem
+
+   # Alternativa via SQL, caso 'createdb' não esteja disponível:
+   psql -U postgres -c "CREATE DATABASE farmasystem;"
+   ```
+
+   > No Windows, se `createdb`/`psql` não forem reconhecidos, use o caminho completo,
+   > ex.: `"C:\Program Files\PostgreSQL\16\bin\psql.exe"`.
+
+## 2. Configurar o MongoDB
+
+1. Garanta que o serviço do MongoDB está em execução.
+   - **Windows**: o serviço "MongoDB" é registrado pelo instalador e inicia sozinho.
+   - **Linux/macOS**: `sudo service mongod start` ou `brew services start mongodb-community`.
+
+2. **Não é necessário criar** o banco/coleções manualmente: o backend cria o banco
+   `farmasystem_files` e os buckets do GridFS automaticamente no primeiro upload de mídia.
+   Confirme apenas que o Mongo aceita conexões em `mongodb://localhost:27017`.
+
+## 3. Instalar dependências
+
+Na raiz do repositório (instala backend e frontend via workspaces):
+
+```bash
 npm install
+```
 
-# Backend
-cp backend/.env.example backend/.env      # e ajuste as variáveis
-# Criar o schema do banco (PostgreSQL):
-psql "$DATABASE_URL" -f backend/db/schema.sql
+## 4. Variáveis de ambiente (`.env`)
 
-# Frontend
+### `backend/.env`
+
+Crie o arquivo a partir do exemplo e ajuste conforme sua instalação:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Exemplo funcional para desenvolvimento local:
+
+```dotenv
+# Aplicação
+NODE_ENV=development
+PORT=3000
+API_PREFIX=api/v1
+
+# CORS — origem do frontend
+FRONTEND_ORIGIN=http://localhost:3001
+
+# URL pública da API (usada para montar links de mídia: imagens/bula)
+APP_PUBLIC_URL=http://localhost:3000/api/v1
+
+# PostgreSQL (banco relacional primário)
+PGHOST=localhost
+PGPORT=5432
+PGUSER=postgres
+PGPASSWORD=postgres
+PGDATABASE=farmasystem
+# Alternativamente, uma única connection string (tem precedência se definida):
+# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/farmasystem
+
+# MongoDB (mídias via GridFS)
+MONGO_URI=mongodb://localhost:27017
+MONGO_DB=farmasystem_files
+
+# JWT — troque por segredos aleatórios longos
+JWT_ACCESS_SECRET=troque-este-segredo-de-acesso
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=troque-este-segredo-de-refresh
+JWT_REFRESH_EXPIRES_IN=7d
+```
+
+### `frontend/.env.local`
+
+```bash
 cp frontend/.env.local.example frontend/.env.local
 ```
 
-## Executar em desenvolvimento
+Exemplo funcional:
 
-```bash
-npm run dev:backend    # API em http://localhost:3000/api/v1 (Swagger em /api/v1/docs)
-npm run dev:frontend   # Web em http://localhost:3001
+```dotenv
+# URL base da API REST do backend
+NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1
 ```
 
-## Executar com Docker
+## 5. Inicializar o banco de dados (schema PostgreSQL)
 
-Sobe tudo (PostgreSQL + MongoDB + API + Web) com um comando — não precisa de
-Node/Postgres/Mongo instalados localmente, apenas Docker.
-
-```bash
-# (opcional) sobrescrever segredos/variáveis:
-cp .env.docker.example .env    # e ajuste, principalmente os segredos JWT
-
-docker compose up -d --build
-```
-
-Serviços expostos:
-
-| Serviço | URL |
-| --- | --- |
-| API (NestJS) | http://localhost:3000/api/v1 (Swagger em `/api/v1/docs`) |
-| Web (Next.js) | http://localhost:3001 |
-| PostgreSQL | `localhost:5432` |
-| MongoDB | `localhost:27017` |
-
-O schema do PostgreSQL (`backend/db/schema.sql`) é aplicado automaticamente na
-primeira subida. Os dados persistem nos volumes `pgdata` e `mongodata`.
+Aplique o schema (tabelas, enums e índices) ao banco criado no passo 1. O script é
+**idempotente** — pode ser reexecutado sem erro.
 
 ```bash
-docker compose logs -f            # acompanhar logs
-docker compose down               # parar (mantém os dados)
-docker compose down -v            # parar e apagar os volumes (zera os bancos)
+# Usando as variáveis do .env (usuário/senha/host)
+psql -U postgres -d farmasystem -f backend/db/schema.sql
+
+# Ou, se você definiu DATABASE_URL:
+psql "postgresql://postgres:postgres@localhost:5432/farmasystem" -f backend/db/schema.sql
 ```
+
+> **Usuário administrador inicial**: na primeira vez que o backend sobe, se não
+> houver nenhum usuário cadastrado, ele cria automaticamente um administrador para
+> você conseguir entrar:
+>
+> | Campo | Valor |
+> | --- | --- |
+> | E-mail | `adm@gmail.com` |
+> | Senha  | `adminadmin` |
+>
+> Troque essa senha após o primeiro login.
+
+## 6. Executar em desenvolvimento
+
+Abra **dois terminais** (ou rode em background) — um para o backend, outro para o frontend:
+
+```bash
+# Terminal 1 — API
+npm run dev:backend
+# API em http://localhost:3000/api/v1  (Swagger em /api/v1/docs)
+
+# Terminal 2 — Web
+npm run dev:frontend
+# Web em http://localhost:3001
+```
+
+Acesse http://localhost:3001 e faça login com o administrador inicial (passo 5).
+
+## Build de produção
+
+```bash
+npm run build            # compila backend e frontend
+npm run build:backend    # apenas backend
+npm run build:frontend   # apenas frontend
+
+# Executar após o build:
+npm run start:prod --workspace backend   # node dist/main.js
+npm run start --workspace frontend       # next start -p 3001
+```
+
+## Solução de problemas
+
+- **`ECONNREFUSED` no PostgreSQL/MongoDB**: o serviço correspondente não está rodando
+  ou as credenciais/host no `backend/.env` estão incorretas.
+- **`database "farmasystem" does not exist`**: rode o passo 1 (`createdb`).
+- **Tabelas inexistentes / erro de `relation`**: rode o passo 5 (aplicar `schema.sql`).
+- **CORS bloqueado no navegador**: confira que `FRONTEND_ORIGIN` no backend bate com a
+  URL do frontend (`http://localhost:3001`).
 
 ## Documentação
 
