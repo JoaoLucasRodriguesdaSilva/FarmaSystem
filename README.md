@@ -200,7 +200,6 @@ npm run start --workspace frontend       # next start -p 3001
 
 | Arquivo | Conteúdo |
 | --- | --- |
-| `CLAUDE.md` | Guia técnico consolidado (stack, RBAC, estrutura, regras de negócio) |
 | `architecture.md` | Arquitetura de backend e frontend |
 | `database_schema.md` | Modelagem PostgreSQL + GridFS |
 | `swagger_api.md` | Contrato da API REST (OpenAPI 3.0) |
